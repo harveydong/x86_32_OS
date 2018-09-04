@@ -1,0 +1,16 @@
+#ifndef __PROCESSOR_FLAGS_H_
+#define __PROCESSOR_FLAGS_H_
+
+#define X86_EFLAGS_CF 0x00000001
+#define X86_EFLAGS_ZF 0x00000040
+
+#define X86_CR4_PAE	0x00000020
+#define X86_CR0_PE	0x00000001 
+#define X86_CR0_PG	0x80000000
+
+
+#define MSR_EFER		0xc0000080 
+#define _EFER_LMA		10
+#define _EFER_LME		8
+
+#endif

@@ -1,0 +1,250 @@
+
+head32.o:     file format elf32-i386
+
+
+Disassembly of section .text:
+
+00000000 <_stext>:
+       0:	fc                   	cld    
+       1:	b8 18 00 00 00       	mov    $0x18,%eax
+       6:	8e d8                	mov    %eax,%ds
+       8:	8e c0                	mov    %eax,%es
+       a:	8e e0                	mov    %eax,%fs
+       c:	8e e8                	mov    %eax,%gs
+       e:	66 09 db             	or     %bx,%bx
+      11:	74 12                	je     25 <_stext+0x25>
+      13:	8b 15 00 00 00 40    	mov    0x40000000,%edx
+      19:	21 d2                	and    %edx,%edx
+      1b:	74 08                	je     25 <_stext+0x25>
+      1d:	0f 20 e0             	mov    %cr4,%eax
+      20:	09 d0                	or     %edx,%eax
+      22:	0f 22 e0             	mov    %eax,%cr4
+      25:	bf 00 00 00 40       	mov    $0x40000000,%edi
+      2a:	b8 07 20 10 00       	mov    $0x102007,%eax
+      2f:	ab                   	stos   %eax,%es:(%edi)
+      30:	bf 00 00 00 40       	mov    $0x40000000,%edi
+      35:	b8 07 00 00 00       	mov    $0x7,%eax
+      3a:	ab                   	stos   %eax,%es:(%edi)
+      3b:	05 00 10 00 00       	add    $0x1000,%eax
+      40:	81 ff 00 00 00 40    	cmp    $0x40000000,%edi
+      46:	75 f2                	jne    3a <_stext+0x3a>
+      48:	b8 00 00 00 40       	mov    $0x40000000,%eax
+      4d:	0f 22 d8             	mov    %eax,%cr3
+      50:	0f 20 c0             	mov    %cr0,%eax
+      53:	0d 00 00 00 80       	or     $0x80000000,%eax
+      58:	0f 22 c0             	mov    %eax,%cr0
+      5b:	eb 00                	jmp    5d <_stext+0x5d>
+      5d:	b8 64 00 00 00       	mov    $0x64,%eax
+      62:	ff e0                	jmp    *%eax
+      64:	8b 25 00 00 00 00    	mov    0x0,%esp
+      6a:	66 09 db             	or     %bx,%bx
+      6d:	74 05                	je     74 <_stext+0x74>
+      6f:	6a 00                	push   $0x0
+      71:	9d                   	popf   
+      72:	eb 5c                	jmp    d0 <checkCPUtype>
+      74:	31 c0                	xor    %eax,%eax
+      76:	bf 00 00 00 00       	mov    $0x0,%edi
+      7b:	b9 00 00 00 00       	mov    $0x0,%ecx
+      80:	29 f9                	sub    %edi,%ecx
+      82:	f3 aa                	rep stos %al,%es:(%edi)
+      84:	e8 2e 01 00 00       	call   1b7 <setup_idt>
+      89:	6a 00                	push   $0x0
+      8b:	9d                   	popf   
+      8c:	bf 00 00 00 00       	mov    $0x0,%edi
+      91:	b9 00 02 00 00       	mov    $0x200,%ecx
+      96:	fc                   	cld    
+      97:	f3 a5                	rep movsl %ds:(%esi),%es:(%edi)
+      99:	31 c0                	xor    %eax,%eax
+      9b:	b9 00 02 00 00       	mov    $0x200,%ecx
+      a0:	f3 ab                	rep stos %eax,%es:(%edi)
+      a2:	8b 35 28 02 00 00    	mov    0x228,%esi
+      a8:	21 f6                	and    %esi,%esi
+      aa:	75 18                	jne    c4 <_stext+0xc4>
+      ac:	66 81 3d 20 00 09 00 	cmpw   $0xa33f,0x90020
+      b3:	3f a3 
+      b5:	75 19                	jne    d0 <checkCPUtype>
+      b7:	0f b7 35 22 00 09 00 	movzwl 0x90022,%esi
+      be:	81 c6 00 00 09 00    	add    $0x90000,%esi
+      c4:	bf 00 08 00 00       	mov    $0x800,%edi
+      c9:	b9 00 02 00 00       	mov    $0x200,%ecx
+      ce:	f3 a5                	rep movsl %ds:(%esi),%es:(%edi)
+
+000000d0 <checkCPUtype>:
+      d0:	c7 05 08 00 00 00 ff 	movl   $0xffffffff,0x8
+      d7:	ff ff ff 
+      da:	c7 05 00 00 00 00 03 	movl   $0x3,0x0
+      e1:	00 00 00 
+      e4:	9c                   	pushf  
+      e5:	58                   	pop    %eax
+      e6:	89 c1                	mov    %eax,%ecx
+      e8:	35 00 00 04 00       	xor    $0x40000,%eax
+      ed:	50                   	push   %eax
+      ee:	9d                   	popf   
+      ef:	9c                   	pushf  
+      f0:	58                   	pop    %eax
+      f1:	31 c8                	xor    %ecx,%eax
+      f3:	25 00 00 04 00       	and    $0x40000,%eax
+      f8:	c7 05 00 00 00 00 04 	movl   $0x4,0x0
+      ff:	00 00 00 
+     102:	89 c8                	mov    %ecx,%eax
+     104:	35 00 00 20 00       	xor    $0x200000,%eax
+     109:	50                   	push   %eax
+     10a:	9d                   	popf   
+     10b:	9c                   	pushf  
+     10c:	58                   	pop    %eax
+     10d:	31 c8                	xor    %ecx,%eax
+     10f:	51                   	push   %ecx
+     110:	9d                   	popf   
+     111:	25 00 00 20 00       	and    $0x200000,%eax
+     116:	31 c0                	xor    %eax,%eax
+     118:	0f a2                	cpuid  
+     11a:	a3 08 00 00 00       	mov    %eax,0x8
+     11f:	89 1d 10 00 00 00    	mov    %ebx,0x10
+     125:	89 15 14 00 00 00    	mov    %edx,0x14
+     12b:	89 0d 18 00 00 00    	mov    %ecx,0x18
+     131:	09 c0                	or     %eax,%eax
+     133:	b8 01 00 00 00       	mov    $0x1,%eax
+     138:	0f a2                	cpuid  
+     13a:	88 c1                	mov    %al,%cl
+     13c:	80 e4 0f             	and    $0xf,%ah
+     13f:	88 25 00 00 00 00    	mov    %ah,0x0
+     145:	24 f0                	and    $0xf0,%al
+     147:	a2 02 00 00 00       	mov    %al,0x2
+     14c:	80 e1 0f             	and    $0xf,%cl
+     14f:	88 0d 03 00 00 00    	mov    %cl,0x3
+     155:	89 15 0c 00 00 00    	mov    %edx,0xc
+
+0000015b <is486>:
+     15b:	0f 20 c0             	mov    %cr0,%eax
+     15e:	25 11 00 00 80       	and    $0x80000011,%eax
+     163:	0d 22 00 05 00       	or     $0x50022,%eax
+     168:	eb 00                	jmp    16a <is486+0xf>
+     16a:	0f 22 c0             	mov    %eax,%cr0
+     16d:	fe 05 b6 01 00 00    	incb   0x1b6
+     173:	0f 01 15 2e 02 00 00 	lgdtl  0x22e
+     17a:	0f 01 1d 26 02 00 00 	lidtl  0x226
+     181:	ea 88 01 00 00 10 00 	ljmp   $0x10,$0x188
+     188:	b8 18 00 00 00       	mov    $0x18,%eax
+     18d:	8e d8                	mov    %eax,%ds
+     18f:	8e c0                	mov    %eax,%es
+     191:	8e e0                	mov    %eax,%fs
+     193:	8e e8                	mov    %eax,%gs
+     195:	8e d0                	mov    %eax,%ss
+     197:	31 c0                	xor    %eax,%eax
+     199:	0f 00 d0             	lldt   %ax
+     19c:	fc                   	cld    
+     19d:	8a 0d b6 01 00 00    	mov    0x1b6,%cl
+     1a3:	80 f9 01             	cmp    $0x1,%cl
+     1a6:	74 07                	je     1af <is486+0x54>
+     1a8:	e8 fc ff ff ff       	call   1a9 <is486+0x4e>
+     1ad:	eb 05                	jmp    1b4 <L6>
+     1af:	e8 fc ff ff ff       	call   1b0 <is486+0x55>
+
+000001b4 <L6>:
+     1b4:	eb fe                	jmp    1b4 <L6>
+
+000001b6 <ready>:
+	...
+
+000001b7 <setup_idt>:
+     1b7:	8d 15 08 02 00 00    	lea    0x208,%edx
+     1bd:	b8 00 00 10 00       	mov    $0x100000,%eax
+     1c2:	66 89 d0             	mov    %dx,%ax
+     1c5:	66 ba 00 8e          	mov    $0x8e00,%dx
+     1c9:	8d 3d 00 00 00 00    	lea    0x0,%edi
+     1cf:	b9 00 01 00 00       	mov    $0x100,%ecx
+
+000001d4 <rp_sidt>:
+     1d4:	89 07                	mov    %eax,(%edi)
+     1d6:	89 57 04             	mov    %edx,0x4(%edi)
+     1d9:	83 c7 08             	add    $0x8,%edi
+     1dc:	49                   	dec    %ecx
+     1dd:	75 f5                	jne    1d4 <rp_sidt>
+     1df:	c3                   	ret    
+
+000001e0 <stack_start>:
+     1e0:	00 20                	add    %ah,(%eax)
+     1e2:	00 00                	add    %al,(%eax)
+     1e4:	18 00                	sbb    %al,(%eax)
+	...
+
+000001e8 <int_msg>:
+     1e8:	55                   	push   %ebp
+     1e9:	6e                   	outsb  %ds:(%esi),(%dx)
+     1ea:	6b 6f 77 6e          	imul   $0x6e,0x77(%edi),%ebp
+     1ee:	20 69 6e             	and    %ch,0x6e(%ecx)
+     1f1:	74 65                	je     258 <gdt+0x28>
+     1f3:	72 72                	jb     267 <gdt+0x37>
+     1f5:	75 70                	jne    267 <gdt+0x37>
+     1f7:	74 20                	je     219 <ignore_int+0x11>
+     1f9:	62 79 20             	bound  %edi,0x20(%ecx)
+     1fc:	68 61 72 76 65       	push   $0x65767261
+     201:	79 64                	jns    267 <gdt+0x37>
+     203:	6f                   	outsl  %ds:(%esi),(%dx)
+     204:	6e                   	outsb  %ds:(%esi),(%dx)
+     205:	67 0a 00             	or     (%bx,%si),%al
+
+00000208 <ignore_int>:
+     208:	fc                   	cld    
+     209:	50                   	push   %eax
+     20a:	51                   	push   %ecx
+     20b:	52                   	push   %edx
+     20c:	06                   	push   %es
+     20d:	1e                   	push   %ds
+     20e:	b8 18 00 00 00       	mov    $0x18,%eax
+     213:	8e d8                	mov    %eax,%ds
+     215:	8e c0                	mov    %eax,%es
+     217:	68 e8 01 00 00       	push   $0x1e8
+     21c:	58                   	pop    %eax
+     21d:	1f                   	pop    %ds
+     21e:	5a                   	pop    %edx
+     21f:	59                   	pop    %ecx
+     220:	58                   	pop    %eax
+     221:	cf                   	iret   
+     222:	66 90                	xchg   %ax,%ax
+	...
+
+00000226 <idt_descr>:
+     226:	ff 07                	incl   (%edi)
+
+00000228 <idt>:
+     228:	00 00                	add    %al,(%eax)
+     22a:	00 00                	add    %al,(%eax)
+	...
+
+0000022e <gdt_descr>:
+     22e:	5f                   	pop    %edi
+     22f:	04                   	.byte 0x4
+
+00000230 <gdt>:
+	...
+
+00001000 <swapper_pg_dir>:
+    1000:	07                   	pop    %es
+    1001:	20 10                	and    %dl,(%eax)
+    1003:	00 07                	add    %al,(%edi)
+    1005:	30 10                	xor    %dl,(%eax)
+	...
+    1bff:	00 07                	add    %al,(%edi)
+    1c01:	20 10                	and    %dl,(%eax)
+    1c03:	00 07                	add    %al,(%edi)
+    1c05:	30 10                	xor    %dl,(%eax)
+	...
+
+00002000 <pg0>:
+	...
+
+00003000 <pg1>:
+	...
+
+00004000 <empty_zero_page>:
+	...
+
+00005000 <empty_bad_page>:
+	...
+
+00006000 <empty_bad_pte_table>:
+	...
+
+00007000 <empty_bad_pmd_table>:
+	...

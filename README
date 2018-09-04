@@ -1,0 +1,10 @@
+
+
+from 0x7c00-0x7d00 is start
+from 0x7d00--0x86ff is loader
+from 0x8700-->sector 80 is header32 for real mode to pm mode
+
+so dd if=start of=c.img bs=512 conv=notrunc
+   dd if=loader bs=512  seek=1
+   dd if=header32 bs=512 seek=6
+   dd if=vmlinux bs=512 seek=80 
