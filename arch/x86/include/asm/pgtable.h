@@ -6,6 +6,7 @@
 
 #ifndef __ASSEMBLY__
 extern pgd_t swapper_pg_dir[1024];
+extern unsigned long empty_zero_page[1024];
 
 #define _PAGE_PRESENT	0x001
 #define _PAGE_RW	0x002

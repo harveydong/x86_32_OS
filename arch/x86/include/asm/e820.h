@@ -56,9 +56,9 @@
 #ifndef __ASSEMBLY__
 #include <linux/types.h>
 struct e820entry {
-	__u64 addr;	/* start of memory segment */
-	__u64 size;	/* size of memory segment */
-	__u32 type;	/* type of memory segment */
+	u64 addr;	/* start of memory segment */
+	u64 size;	/* size of memory segment */
+	u32  type;	/* type of memory segment */
 } __attribute__((packed));
 
 struct e820map {
@@ -117,7 +117,7 @@ extern unsigned long end_user_pfn;
 extern u64 find_e820_area(u64 start, u64 end, u64 size, u64 align);
 extern u64 find_e820_area_size(u64 start, u64 *sizep, u64 align);
 extern u64 early_reserve_e820(u64 startt, u64 sizet, u64 align);
-#include <linux/early_res.h>
+//#include <linux/early_res.h>
 
 extern unsigned long e820_end_of_ram_pfn(void);
 extern unsigned long e820_end_of_low_ram_pfn(void);
@@ -148,7 +148,7 @@ static inline bool is_ISA_range(u64 s, u64 e)
 #endif /* __ASSEMBLY__ */
 
 #ifdef __KERNEL__
-#include <linux/ioport.h>
+//#include <linux/ioport.h>
 
 #define HIGH_MEMORY	(1024*1024)
 #endif /* __KERNEL__ */

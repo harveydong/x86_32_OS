@@ -2,6 +2,7 @@
 #define __BOOT_H__
 #include <asm/screen_info.h>
 #include <linux/types.h>
+#include <asm/e820.h>
 
 #define STACK_SIZE 512
 #define NORMAL_VGA      0xffff          /* 80x25 mode */
@@ -45,13 +46,14 @@ struct boot_header {
 	unsigned long kernel_start_sector;
 } __attribute__((packed));
 
+#if 0
 struct e820entry {
 	unsigned long addrl, addrh;
 	unsigned long sizel, sizeh;
 	unsigned long type;
 	unsigned long unused;
 } __attribute__((packed));
-
+#endif
 
 struct setup_header {
 	__u8	setup_sects;
@@ -100,8 +102,10 @@ struct setup_header {
 
 struct boot_params {
 	struct boot_header boot_header;
-	struct e820entry e820_mm[E820_MAX_MAP_SIZE];
 	unsigned char e820_entries;
+
+	struct e820entry e820[E820_MAX_MAP_SIZE];
+		//struct e820map e820_map;
 	unsigned char _padding[3];
 	struct setup_header hdr;
 	struct screen_info screen_info;

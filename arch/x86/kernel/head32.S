@@ -101,15 +101,17 @@ startup_32:
 	popfl
 	
 	movl $SYMBOL_NAME(empty_zero_page),%edi
-	movl $512,%ecx
+	movl $1024,%ecx
 	cld
 	rep
 	movsl
-	xorl %eax,%eax
-	mov $512,%ecx
-	rep
-	stosl
 
+//	xorl %eax,%eax
+//	mov $512,%ecx
+//	rep
+//	stosl
+
+/*
 	movl SYMBOL_NAME(empty_zero_page) + NEW_CL_POINTER,%esi
 	andl %esi,%esi
 	jnz 2f
@@ -123,6 +125,8 @@ startup_32:
 	movl $512,%ecx
 	rep
 	movsl
+
+*/
 
 1:
 checkCPUtype:

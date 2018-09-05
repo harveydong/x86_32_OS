@@ -104,9 +104,13 @@ void __head_text  setup(struct boot_header *header)
 	puts("Booting...\n");
 
 	//copy_boot_params();
+
+	memset(&params,0,sizeof(struct boot_params));
 	params.boot_header = *header;
 
 	e820_detect(&params);
+
+	e820_show(&params);
 
 	enable_a20();
 		
