@@ -28,6 +28,9 @@ struct mm_struct{
 	struct list_head mmlist;
 		
 
+	unsigned long start_code,end_code,start_data,end_data;
+	unsigned long start_brk,brk;
+
 };
 
 #define DEF_COUNTER (10*HZ/100)

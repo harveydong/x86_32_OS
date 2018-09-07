@@ -15,9 +15,9 @@
  
 extern char *HEAP;
 extern char *heap_end;
-extern char _end[];
+extern char _boot_end[];
 
-#define RESET_HEAP() ((void*)(HEAP = _end))
+#define RESET_HEAP() ((void*)(HEAP = _boot_end))
 
 static inline char *__get_heap(size_t s, size_t a, size_t n)
 {

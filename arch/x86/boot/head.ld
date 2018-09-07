@@ -42,7 +42,7 @@ SECTIONS
 		__bss_end = .;
 	}
 	. = ALIGN(16);
-	_end = .;
+	_boot_end = .;
 
 
 	 /DISCARD/ : { *(.note*) }

@@ -12,8 +12,8 @@ typedef unsigned long long uint64;
 
 struct boot_params params __attribute__((aligned(16)));
 
-char *HEAP = _end;
-char *heap_end = _end;
+char *HEAP =_boot_end;
+char *heap_end = _boot_end;
 
 #define __head_text __attribute__((section(".head.text")))
 #if 0

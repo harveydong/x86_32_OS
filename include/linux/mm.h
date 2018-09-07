@@ -24,4 +24,7 @@ struct vm_area_struct{
 
 };
 
+typedef struct page{
+	unsigned long index;
+}mem_map_t;
 #endif

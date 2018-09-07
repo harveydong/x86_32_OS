@@ -34,5 +34,6 @@ typedef struct {
 #define BOOT_USER_PGD_PTRS (__PAGE_OFFSET >> TWOLEVEL_PGDIR_SHIFT)
 #define BOOT_KERNEL_PGD_PTRS (1024 - BOOT_USER_PGD_PTRS)
 
+#define page_to_mb(x) ((x) >> (20 - PAGE_SHIFT))
 
 #endif

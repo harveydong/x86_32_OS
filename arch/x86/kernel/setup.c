@@ -8,9 +8,19 @@
 
 #include <asm/e820.h>
 #include <asm/boot.h>
-
+#include <linux/ioport.h>
+#include <asm/io.h>
+#include <linux/sched.h>
+#include <asm/highmem.h>
+#include <linux/bootmem.h>
+#include <asm/smp.h>
 
 unsigned long mmu_cr4_features = X86_CR4_PAE;
+
+extern char _text,_etext,_edata,_end;
+
+
+
 
 #define PARAM ((unsigned char*)empty_zero_page)
 
@@ -26,7 +36,26 @@ static struct boot_params *setup_params =(struct boot_params*) (empty_zero_page)
 
 #define E820_MAP ((struct e820entry *)(setup_params->e820))
 
+static struct resource code_resource = {
+	.name = "Kernel Code",
+	.start = 0x100000,
+	.end = 0	
 
+};
+
+static struct resource data_resource = {
+	.name = "Kernel data",
+	.start = 0,
+	.end = 0
+};
+
+static struct resource vram_resource ={
+
+	.name = "Video RAM area",
+	.start = 0xa0000,
+	.end = 0xbffff,
+	.flags = IORESOURCE_BUSY
+};
 
 struct cpuinfo_x86 boot_cpu_data = {0,0,0,0,-1,1,0,0,-1};
 
@@ -158,7 +187,96 @@ void __init setup_memory_region(void)
 }
 void __init setup_arch(char **cmdline_p)
 {
+
+	unsigned long bootmap_size;
+	unsigned long start_pfn,max_pfn,max_low_pfn;
+	int i;
+
+
 	ROOT_DEV = to_kdev_t(ORIG_ROOT_DEV);	
 	
 	setup_memory_region();
+	
+	init_mm.start_code = (unsigned long)&_text;
+	init_mm.end_code = (unsigned long)&_etext;
+	init_mm.end_data = (unsigned long)&_edata;
+	init_mm.brk = (unsigned long)&_end;
+	
+	code_resource.start = virt_to_bus(&_text);
+	code_resource.end = virt_to_bus(&_etext) - 1;
+	data_resource.start = virt_to_bus(&_etext);
+	data_resource.end = virt_to_bus(&_edata) - 1;
+
+#define PFN_UP(x) (((x) + PAGE_SIZE - 1) >> PAGE_SHIFT)
+#define PFN_DOWN(x) ((x) >> PAGE_SHIFT)
+#define PFN_PHYS(x) ((x) << PAGE_SHIFT)
+
+
+#define VMALLOC_RESERVE (unsigned long)(128 << 20)
+#define MAXMEM (unsigned long)(-PAGE_OFFSET - VMALLOC_RESERVE)
+#define MAXMEM_PFN PFN_DOWN(MAXMEM)
+#define MAX_NONPAE_PFN (1<<20)
+
+
+	start_pfn = PFN_UP(__pa(&_end));	
+	max_pfn = 0;
+
+	for(i = 0; i < e820.nr_map; i++){
+		unsigned long start,end;
+		
+		if(e820.map[i].type !=  E820_RAM)
+			continue;
+	
+		start = PFN_UP(e820.map[i].addr);
+		end = PFN_DOWN(e820.map[i].addr + e820.map[i].size);
+
+		if(start >= end)
+			continue;
+		if(end > max_pfn)
+			max_pfn = end;
+	}
+
+	printk("max_pfn is %lx\n",max_pfn);
+
+	max_low_pfn = max_pfn;
+	
+	if(max_low_pfn > MAXMEM_PFN){
+		max_low_pfn = MAXMEM_PFN;
+	
+	}
+	
+	highstart_pfn = highend_pfn = max_pfn;
+	if(max_pfn > MAXMEM_PFN){
+		highstart_pfn = MAXMEM_PFN;
+		printk("%ldMB HIGHMEM available.\n",page_to_mb(highend_pfn - highstart_pfn));
+	}
+
+	bootmap_size = init_bootmem(start_pfn,max_low_pfn);
+
+	for(i = 0; i < e820.nr_map;i++){
+		unsigned long curr_pfn,last_pfn,size;
+	
+		if(e820.map[i].type != E820_RAM)
+			continue;
+
+		curr_pfn = PFN_UP(e820.map[i].addr);
+		if(curr_pfn >= max_low_pfn)
+			continue;
+
+		last_pfn = PFN_DOWN(e820.map[i].addr + e820.map[i].size);
+		if(last_pfn > max_low_pfn)
+			last_pfn = max_low_pfn;
+		
+		if(last_pfn <= curr_pfn)
+			continue;
+
+		size = last_pfn - curr_pfn;
+		free_bootmem(PFN_PHYS(curr_pfn),PFN_PHYS(size));
+	}
+
+	reserve_bootmem(HIGH_MEMORY,(PFN_PHYS(start_pfn)+bootmap_size + PAGE_SIZE -1) - (HIGH_MEMORY));
+
+	reserve_bootmem(0,PAGE_SIZE);
+	reserve_bootmem(PAGE_SIZE,PAGE_SIZE);
+	smp_alloc_memory();
 }
