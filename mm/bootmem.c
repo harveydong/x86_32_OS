@@ -50,10 +50,14 @@ static void __init free_bootmem_core(bootmem_data_t *bdata,unsigned long addr,un
 		BUG();
 	start = (addr + PAGE_SIZE - 1)/PAGE_SIZE;
 	sidx = start - (bdata->node_boot_start/PAGE_SIZE);
-	
+
+	printk("free bootmem core here,and sidx:%x,eidx:%x\n",sidx,eidx);
 	for(i = sidx; i < eidx; i++){
 		if(!test_and_clear_bit(i,bdata->node_bootmem_map))
-			BUG();
+		{
+			//printk("i is %d\n",i);
+			//BUG();
+		}
 	}
 }
 void __init free_bootmem(unsigned long addr,unsigned long size)
@@ -90,11 +94,14 @@ static void *__init __alloc_bootmem_core(bootmem_data_t *bdata,unsigned long siz
 	int i;
 
 	unsigned long start = 0;
+	void *ret;
+	unsigned long offset,remaining_size;
 
 	unsigned long areasize,preferred,incr;
 
 	unsigned long eidx = bdata->node_low_pfn  - (bdata->node_boot_start >> PAGE_SHIFT);
-	
+
+	printk("alloc low:boot start:%x,low_pfn:%x\n",bdata->node_boot_start,bdata->node_low_pfn);	
 	if(!size) BUG();
 
 	if(goal && (goal >= bdata->node_boot_start) && ((goal >> PAGE_SHIFT)<bdata->node_low_pfn)){
@@ -133,6 +140,42 @@ found:
 	if(start >= eidx)
 		BUG();
 
+	if(align <= PAGE_SIZE && bdata->last_offset && bdata->last_pos+1 == start){
+		offset = (bdata->last_offset + align - 1) & ~(align -1);
+		if(offset > PAGE_SIZE)
+			BUG();
+
+		remaining_size = PAGE_SIZE - offset;
+		if(size < remaining_size){
+			areasize = 0;
+			bdata->last_offset = offset + size;
+			ret = phys_to_virt(bdata->last_pos*PAGE_SIZE + offset + bdata->node_boot_start);
+		}else{
+
+			remaining_size = size - remaining_size;
+			areasize = (remaining_size + PAGE_SIZE -1)/PAGE_SIZE;
+			ret = phys_to_virt(bdata->last_pos*PAGE_SIZE + offset +bdata->node_boot_start);
+			bdata->last_pos = start + areasize - 1;
+			bdata->last_offset = remaining_size;
+		}
+
+		bdata->last_offset &= ~PAGE_MASK;
+
+	}else{
+
+		bdata->last_pos = start + areasize - 1;
+		bdata->last_offset = size & ~PAGE_MASK;
+		ret = phys_to_virt(start*PAGE_SIZE + bdata->node_boot_start);
+	}
+
+	for(i = start; i < start + areasize;i++)
+		if(test_and_set_bit(i,bdata->node_bootmem_map)){
+			printk("ERROR and i:%d,node_bootmem_map:%x\n",i,bdata->node_bootmem_map + i);
+
+		}
+
+	memset(ret,0,size);
+	return ret;
 }
 
 void * __init __alloc_bootmem(unsigned long size,unsigned long align,unsigned long goal)

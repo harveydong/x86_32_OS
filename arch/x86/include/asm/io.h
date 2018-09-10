@@ -19,15 +19,20 @@ static inline void writew(unsigned short val,volatile void *addr)
 
 #define IO_SPACE_LIMIT 0xffff
 
+#if 1
 static inline void *phys_to_virt(unsigned long address)
 {
-	__va(address);
+
+	return  __va(address);
 }
+#endif
 static  inline unsigned long virt_to_phys(volatile void *address)
 {
 	return __pa(address);
 
 }
+//#define phys_to_virt(address) __va(address)
+
 #define virt_to_bus virt_to_phys
 
 #endif

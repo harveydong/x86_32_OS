@@ -194,9 +194,10 @@ void __init setup_arch(char **cmdline_p)
 
 
 	ROOT_DEV = to_kdev_t(ORIG_ROOT_DEV);	
-	
+
+
 	setup_memory_region();
-	
+
 	init_mm.start_code = (unsigned long)&_text;
 	init_mm.end_code = (unsigned long)&_etext;
 	init_mm.end_data = (unsigned long)&_edata;
@@ -220,7 +221,7 @@ void __init setup_arch(char **cmdline_p)
 
 	start_pfn = PFN_UP(__pa(&_end));	
 	max_pfn = 0;
-
+	
 	for(i = 0; i < e820.nr_map; i++){
 		unsigned long start,end;
 		
@@ -252,7 +253,7 @@ void __init setup_arch(char **cmdline_p)
 	}
 
 	bootmap_size = init_bootmem(start_pfn,max_low_pfn);
-
+	printk("max low pfn:0x%x\n",max_low_pfn);
 	for(i = 0; i < e820.nr_map;i++){
 		unsigned long curr_pfn,last_pfn,size;
 	
@@ -273,10 +274,10 @@ void __init setup_arch(char **cmdline_p)
 		size = last_pfn - curr_pfn;
 		free_bootmem(PFN_PHYS(curr_pfn),PFN_PHYS(size));
 	}
-
 	reserve_bootmem(HIGH_MEMORY,(PFN_PHYS(start_pfn)+bootmap_size + PAGE_SIZE -1) - (HIGH_MEMORY));
-
 	reserve_bootmem(0,PAGE_SIZE);
 	reserve_bootmem(PAGE_SIZE,PAGE_SIZE);
 	smp_alloc_memory();
+	printk("into setup :%x\n",phys_to_virt(0));
+//	printk("virt to phys:%0x\n",virt_to_phys(0xc0002000));
 }
