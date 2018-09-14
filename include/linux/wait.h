@@ -16,7 +16,15 @@ struct __wait_queue_head{
 typedef struct __wait_queue_head wait_queue_head_t;
 
 #define WAITQUEUE_RW_LOCK_UNLOCKED SPIN_LOCK_UNLOCKED
+
 #define __WAIT_QUEUE_HEAD_INITIALIZER(name)\
 {WAITQUEUE_RW_LOCK_UNLOCKED,{&(name).task_list,&(name).task_list}}
 
+
+
+static inline void init_waitqueue_head(wait_queue_head_t *q)
+{
+	q->lock = WAITQUEUE_RW_LOCK_UNLOCKED;
+	
+}
 #endif

@@ -2,6 +2,7 @@
 #define __PROCESSOR_H_
 #include <linux/types.h>
 #include <asm/cpufeature.h>
+#include <asm/processor-flags.h>
 
 extern unsigned long mmu_cr4_features;
 
@@ -42,4 +43,22 @@ struct cpuinfo_x86{
 
 #define X86_VENDOR_INTEL 0
 #define X86_VENDOR_CENTAUR 5
+
+
+extern unsigned long mmu_cr4_features;
+
+static inline void set_in_cr4(unsigned long mask)
+{
+	mmu_cr4_features |= mask;
+
+	__asm__("movl %%cr4,%%eax\n\t"
+		"orl %0,%%eax\n\t"
+		"movl %%eax,%%cr4\n"
+		::"irg"(mask)
+		:"ax");
+
+}
+
+
+#define TASK_SIZE (PAGE_OFFSET)
 #endif

@@ -14,6 +14,7 @@
 #include <asm/highmem.h>
 #include <linux/bootmem.h>
 #include <asm/smp.h>
+#include <asm/mpspec.h>
 
 unsigned long mmu_cr4_features = X86_CR4_PAE;
 
@@ -278,6 +279,9 @@ void __init setup_arch(char **cmdline_p)
 	reserve_bootmem(0,PAGE_SIZE);
 	reserve_bootmem(PAGE_SIZE,PAGE_SIZE);
 	smp_alloc_memory();
-	printk("into setup :%x\n",phys_to_virt(0));
+
+	find_smp_config();
+
+	paging_init();
 //	printk("virt to phys:%0x\n",virt_to_phys(0xc0002000));
 }

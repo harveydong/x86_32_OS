@@ -6,5 +6,5 @@ typedef struct{
 }atomic_t;
 
 #define ATOMIC_INIT(i) {(i)}
-
+#define atomic_set(v,i) (((v)->counter)=(i))
 #endif

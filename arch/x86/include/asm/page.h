@@ -8,6 +8,18 @@ typedef struct { unsigned long pte_low,pte_high;} pte_t;
 typedef struct { unsigned long long pmd;}pmd_t;
 typedef struct { unsigned long long pgd;}pgd_t;
 
+typedef struct { unsigned long pgprot;} pgprot_t;
+
+
+
+#define pmd_val(x) ((x).pmd)
+
+#define __pgd(x) ((pgd_t) {(x)})
+#define pgd_val(x) ((x).pgd)
+#define pgprot_val(x) ((x).pgprot)
+
+
+#define __pmd(x) ((pmd_t){(x)})
 
 #define BUG() do{\
 	printk("kernel BUG at %s:%d!\n",__FILE__,__LINE__);\

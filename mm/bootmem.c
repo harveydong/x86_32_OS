@@ -4,7 +4,7 @@
 #include <asm/page.h>
 #include <linux/string.h>
 #include <asm/bitops.h>
-
+#include <linux/bootmem.h>
 
 unsigned long max_low_pfn;
 unsigned long min_low_pfn;
@@ -78,7 +78,7 @@ static void __init reserve_bootmem_core(bootmem_data_t *bdata,unsigned long addr
 
 	for(i = sidx; i < eidx; i++)
 		if(test_and_set_bit(i,bdata->node_bootmem_map))
-			printk("hm,page %081x reserved twice\n",i*PAGE_SIZE);
+			printk("hm,page 0x%0lx reserved twice\n",i*PAGE_SIZE);
 	
 
 }
@@ -193,7 +193,18 @@ void * __init __alloc_bootmem(unsigned long size,unsigned long align,unsigned lo
 	return NULL;
 }
 
+void *__init __alloc_bootmem_node(pg_data_t*pgdat,unsigned long size,unsigned long align,unsigned long goal)
+{
+	void *ptr;
+	ptr = __alloc_bootmem_core(pgdat->bdata,size,align,goal);
+	if(ptr)
+		return (ptr);
+
+	BUG();
+	return NULL;
+
+}
 unsigned long __init free_all_bootmem(void)
 {
-
+	return 0;
 }
