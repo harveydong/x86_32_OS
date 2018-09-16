@@ -98,15 +98,26 @@ void __init free_area_init_core(int nid,pg_data_t *pgdat,struct page**gmap,unsig
 	
 	map_size = (totalpages+1)*sizeof(struct page);
 
+
 	if(lmem_map == (struct page*)0){
+	
+		printk("map_size:%d\n",map_size);
+ 
 		lmem_map = (struct page*)alloc_bootmem_node(pgdat,map_size);
+	}	
+ 
+#if 0
 		lmem_map = (struct page*)(PAGE_OFFSET + MAP_ALIGN((unsigned long )lmem_map - PAGE_OFFSET));
 	}
 
+
+
+ 
 	*gmap = pgdat->node_mem_map = lmem_map;
 	pgdat->node_size = totalpages;
 	pgdat->node_start_paddr = zone_start_paddr;
 	pgdat->node_start_mapnr = (lmem_map - mem_map);
+
 	
 	for(p = lmem_map;p < lmem_map+totalpages;p++){
 		set_page_count(p,0);
@@ -184,6 +195,7 @@ void __init free_area_init_core(int nid,pg_data_t *pgdat,struct page**gmap,unsig
 	}
 
 	build_zonelists(pgdat);
+#endif
 }
 void __init free_area_init(unsigned long *zones_size)
 {
