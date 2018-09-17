@@ -13,6 +13,10 @@
 #define set_pgd(pgdptr,pgdval)\
 	set_64bit((unsigned long*)(pgdptr),pgd_val(pgdval))
 
+
+
+#define set_pte(pteptr,pteval) (*(pteptr) = pteval)
+
 #define PGDIR_SHIFT 22
 #define PTRS_PER_PGD 1024
 

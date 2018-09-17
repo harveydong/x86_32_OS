@@ -32,7 +32,7 @@ extern unsigned long empty_zero_page[1024];
 #define PAGE_SHARED __pgprot(_PAGE_PRESENT|_PAGE_RW|_PAGE_USER|_PAGE_ACCESSED)
 #endif
 
-
+#define __PAGE_KERNEL_NOCACHE (_PAGE_PRESENT|_PAGE_RW|_PAGE_DIRTY|_PAGE_PCD|_PAGE_ACCESSED)
 
 #define MAKE_GLOBAL(x) __pgprot((x)|_PAGE_GLOBAL)
 
@@ -42,6 +42,7 @@ extern unsigned long empty_zero_page[1024];
 #define __PAGE_KERNEL (_PAGE_PRESENT|_PAGE_RW|_PAGE_DIRTY|_PAGE_ACCESSED)
 
 #define PAGE_KERNEL MAKE_GLOBAL(__PAGE_KERNEL)
+#define PAGE_KERNEL_NOCACHE MAKE_GLOBAL(__PAGE_KERNEL_NOCACHE)
 
 #define _KERNEL_TABLE (_PAGE_PRESENT|_PAGE_RW|_PAGE_ACCESSED|_PAGE_DIRTY)
 
@@ -94,6 +95,12 @@ extern unsigned long empty_zero_page[1024];
 	do{\
 		__flush_tlb();\
 	}while(0)
+
+
+
+#define __flush_tlb_one(addr)\
+	__asm__ __volatile__("invlpg %0"::"m"(*(char*)addr))
+
 
 #define pgd_offset(mm,address) ((mm)->pgd + pgd_index(address))
 #define pgd_offset_k(address) pgd_offset(&init_mm,address)

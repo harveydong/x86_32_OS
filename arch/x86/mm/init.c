@@ -17,6 +17,54 @@ void __init mem_init(void)
 {
 
 }
+
+static inline void set_pte_phys(unsigned long vaddr,unsigned long phys,pgprot_t flags)
+{
+	pgd_t *pgd;
+	pmd_t *pmd;
+	pte_t *pte;
+	pgprot_t prot;
+
+	pgd = swapper_pg_dir + __pgd_offset(vaddr);
+	
+	if(pgd_none(*pgd)){
+		printk("PAE BUG #00!\n");
+		return ;
+	}
+
+	pmd = pmd_offset(pgd,vaddr);
+	if(pmd_none(*pmd)){
+		printk("PMD BUG#00\n");
+		return;
+	}
+
+	pte = pte_offset(pmd,vaddr);
+	if(pte_val(*pte)){
+		printk("PTE error\n");
+		return;
+	}
+
+	pgprot_val(prot) = pgprot_val(PAGE_KERNEL)|pgprot_val(flags);
+
+	set_pte(pte,mk_pte_phys(phys,prot));
+	__flush_tlb_one(vaddr);
+}
+
+void __set_fixmap(enum fixed_address idx,unsigned long phys,pgprot_t flags)
+{
+	unsigned long address = __fix_to_virt(idx);
+	
+	if(idx >= __end_of_fixed_address){
+		printk("Invalid __set_fixmap\n");
+		return;
+	}
+
+	set_pte_phys(address,phys,flags);
+
+}
+
+
+
 pte_t *kmap_pte;
 pgprot_t kmap_prot;
 

@@ -19,6 +19,8 @@ typedef struct { unsigned int pgprot;} pgprot_t;
 #define pgprot_val(x) ((x).pgprot)
 
 
+#define pte_val(x) ((x).pte_low) 
+
 #define __pmd(x) ((pmd_t){(x)})
 
 #define BUG() do{\

@@ -5,6 +5,8 @@
 #include <asm/apicdef.h>
 #include <asm/kmap_types.h>
 #include <linux/threads.h>
+#include <asm/pgtable.h>
+
 
 enum fixed_address{
 
@@ -21,5 +23,33 @@ enum fixed_address{
 #define FIXADDR_START (FIXADDR_TOP - FIXADDR_SIZE)
 
 
+
+extern void __set_fixmap(enum fixed_address idx,unsigned long phys,pgprot_t flags);
+
 #define __fix_to_virt(x) (FIXADDR_TOP - ((x) << PAGE_SHIFT))
+
+
+#define set_fixmap_nocache(idx,phys)\
+	__set_fixmap(idx,phys,PAGE_KERNEL_NOCACHE)
+
+
+
+//extern void __this_fixmap_does_not_exist(void);
+
+
+static inline unsigned long fix_to_virt(const unsigned int idx)
+{
+	if(idx >= __end_of_fixed_address)
+	{
+	
+			return;
+
+		//	__this_fixmap_does_not_exist();
+		
+	}
+	
+	return __fix_to_virt(idx);
+}
+
+
 #endif

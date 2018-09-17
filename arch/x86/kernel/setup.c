@@ -15,6 +15,8 @@
 #include <linux/bootmem.h>
 #include <asm/smp.h>
 #include <asm/mpspec.h>
+#include <asm/apic.h>
+
 
 unsigned long mmu_cr4_features = X86_CR4_PAE;
 
@@ -291,4 +293,5 @@ void __init setup_arch(char **cmdline_p)
 		get_smp_config();
 
 
+	init_apic_mapping();
 }

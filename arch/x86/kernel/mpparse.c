@@ -6,8 +6,7 @@
 #include <linux/string.h>
 #include <asm/io_apic.h>
 #include <asm/apicdef.h>
-
-
+#include <asm/fixmap.h>
 
 
 int smp_found_config;
@@ -21,6 +20,9 @@ static unsigned int num_processors;
 unsigned long phys_cpu_present_map;
 
 int apic_version[MAX_APICS];
+int mp_bus_id_to_type[MAX_MP_BUSSES];
+int mp_bus_id_to_pci_bus[MAX_MP_BUSSES] = {-1,};
+int mp_current_pci_id;
 
 
 static int __init mpf_checksum(unsigned char *mp,int len)
@@ -223,6 +225,44 @@ static void __init MP_ioapic_info(struct mpc_config_ioapic*m)
 
 	nr_ioapics++;
 }
+
+
+
+static void __init MP_bus_info(struct mpc_config_bus*m)
+{
+	char str[7];
+
+	memcpy(str,m->mpc_bustype,6);
+
+	str[6] = 0;
+	printk("Bus #%d is %s\n",m->mpc_busid,str);
+
+	if(strncmp(str,BUSTYPE_ISA,sizeof(BUSTYPE_ISA)))
+		mp_bus_id_to_type[m->mpc_busid] = MP_BUS_ISA;
+	else if(strncmp(str,BUSTYPE_EISA,sizeof(BUSTYPE_EISA)))
+		mp_bus_id_to_type[m->mpc_busid] = MP_BUS_EISA;
+	else if(strncmp(str,BUSTYPE_PCI,sizeof(BUSTYPE_PCI))){
+		mp_bus_id_to_type[m->mpc_busid] = MP_BUS_PCI;
+		mp_bus_id_to_pci_bus[m->mpc_busid] = mp_current_pci_id;
+		mp_current_pci_id++;
+	}else{
+		printk("Unknown bustype %s--ignoring\n",str);
+	}
+
+}
+
+static void __init MP_intsrc_info(struct mpc_config_intsrc *m)
+{
+	mp_irqs[mp_irq_entries] = *m;
+
+	printk("Int: type %d,pol %d,trig %d,bus %d,IRQ %x,APIC ID %x,APIC INT %x\n",m->mpc_irqtype,m->mpc_irqflag & 3,(m->mpc_irqflag >> 2)&3,m->mpc_srcbus,m->mpc_srcbusirq,m->mpc_dstapic,m->mpc_dstirq);
+
+	if(++mp_irq_entries == MAX_IRQ_SOURCES){
+		printk("MAX # of irq sources exceeded!!\n");
+		while(1);
+	}
+}
+
 static int __init smp_read_mpc(struct mp_config_table *mpc)
 {
 	char str[16];
@@ -261,7 +301,7 @@ static int __init smp_read_mpc(struct mp_config_table *mpc)
 		switch(*mpt){
 			case MP_PROCESSOR:
 			{
-				struct mpc_config_processor *m = (struct mpc_comfig_processor*)mpt;
+				struct mpc_config_processor *m = (struct mpc_config_processor*)mpt;
 					
 				MP_processor_info(m);
 				mpt += sizeof(*m);
@@ -282,6 +322,8 @@ static int __init smp_read_mpc(struct mp_config_table *mpc)
 			case MP_INTSRC:
 			{
 				struct mpc_config_intsrc *m = (struct mpc_config_intsrc*)mpt;
+				MP_intsrc_info(m);
+
 				printk("This is MP INTSRC\n");
 				mpt += sizeof(*m);
 				count += sizeof(*m);
@@ -300,6 +342,7 @@ static int __init smp_read_mpc(struct mp_config_table *mpc)
 			case MP_BUS:
 			{
 				struct mpc_config_bus *m = (struct mpc_config_bus*)mpt;
+				MP_bus_info(m);
 				printk("this is MP bus\n");
 				mpt += sizeof(*m);
 				count += sizeof(*m);
@@ -334,4 +377,6 @@ void __init get_smp_config(void)
 	
 		smp_read_mpc((void*)mpf->mpf_physptr);
 	}
+	
+	printk("Processors number: %d\n",num_processors);
 }

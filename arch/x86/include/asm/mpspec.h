@@ -3,6 +3,9 @@
 
 #define SMP_MAGIC_IDENT (('_' << 24) | ('P' << 16) | ('M' << 8)|'_')
 
+#define MAX_MP_BUSSES 32
+#define MAX_IRQ_SOURCES 128
+
 
 #define MP_PROCESSOR 0
 #define MP_BUS 1
@@ -11,6 +14,20 @@
 #define MP_LINTSRC 4
 
 #define MAX_APICS 16
+
+
+#define BUSTYPE_EISA "EISA"
+#define BUSTYPE_ISA "ISA"
+#define BUSTYPE_PCI "PCI"
+
+
+enum mp_bustype{
+	MP_BUS_ISA = 1,
+	MP_BUS_EISA,
+	MP_BUS_PCI,
+	MP_BUS_MCA
+};
+
 
 struct mpc_config_processor{
 	unsigned char mpc_type;	
@@ -107,8 +124,13 @@ struct mpc_config_lintsrc
 
 extern void find_smp_config(void);
 
+extern unsigned int boot_cpu_id;
+
+
 
 extern int smp_found_config;
 extern void get_smp_config(void);
+
+extern unsigned long mp_lapic_addr;
 
 #endif
