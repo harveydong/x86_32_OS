@@ -194,6 +194,8 @@ void __init setup_arch(char **cmdline_p)
 	int i;
 
 
+
+
 	ROOT_DEV = to_kdev_t(ORIG_ROOT_DEV);	
 
 
@@ -284,4 +286,6 @@ void __init setup_arch(char **cmdline_p)
 
 	paging_init();
 //	printk("virt to phys:%0x\n",virt_to_phys(0xc0002000));
+
+
 }

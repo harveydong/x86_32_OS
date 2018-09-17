@@ -5,7 +5,7 @@
 #include <asm/dma.h>
 #include <asm/highmem.h>
 #include <linux/mmzone.h>
-#include <asm/pgtable-3level.h>
+#include <asm/pgtable-2level.h>
 #include <asm/fixmap.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
@@ -47,6 +47,7 @@ static void __init fixrange_init(unsigned long start,unsigned long end,pgd_t *pg
 	
 	for(; (i < PTRS_PER_PGD) && (vaddr != end); pgd++,i++){
 
+#if X86_PAE
 		if(pgd_none(*pgd)){
 			pmd = (pmd_t*)alloc_bootmem_low_pages(PAGE_SIZE);
 			set_pgd(pgd,__pgd(__pa(pmd) + 0x1));
@@ -56,7 +57,9 @@ static void __init fixrange_init(unsigned long start,unsigned long end,pgd_t *pg
 		}
 		
 		pmd = pmd_offset(pgd,vaddr);
-		
+#else
+		pmd = (pmd_t*)pgd;
+#endif		
 		for(; (j < PTRS_PER_PMD)&&(vaddr != end); pmd++,j++){
 			if(pmd_none(*pmd)){
 				pte = (pte_t *)alloc_bootmem_low_pages(PAGE_SIZE);
@@ -81,24 +84,35 @@ static void __init pagetable_init(void)
 
 	end = (unsigned long)__va(max_low_pfn*PAGE_SIZE);
 	pgd_base = swapper_pg_dir;
-	
+
+#if X86_PAE
 	for(i = 0; i < PTRS_PER_PGD;i++){
 		pgd = pgd_base + i;
 		__pgd_clear(pgd);
 	}
 
+#endif
+
 	i = __pgd_offset(PAGE_OFFSET);//kernel space 0xc000_0000
 	pgd = pgd_base + i;
 
+	printk("i is %x,and pgd:0x%p\n",i,pgd);
+	printk("pgd base:0x%x\n",pgd_base);
+	printk("boot user pgd ptrs:%d\n",BOOT_USER_PGD_PTRS);
 	for(; i < PTRS_PER_PGD;pgd++,i++)
 	{
 		vaddr = i*PGDIR_SIZE;
+		printk("first for i:%d,vaddr:0x%x,end:0x%x,and k:%d\n",i,vaddr,end,k);
 		if(end && (vaddr >= end))
 			break;
-		
+#if X86_PAE		
 		pmd = (pmd_t*)alloc_bootmem_low_pages(PAGE_SIZE);
 		set_pgd(pgd,__pgd(__pa(pmd)+0x1));
-		
+#else
+		pmd = (pmd_t*)pgd;
+#endif		
+
+		printk("pmd:0x%x,and pmd_offset:0x%x\n",pmd,pmd_offset(pgd,0));
 		if(pmd != pmd_offset(pgd,0))
 			BUG();
 
@@ -109,23 +123,27 @@ static void __init pagetable_init(void)
 				break;
 		
 			pte = (pte_t *)alloc_bootmem_low_pages(PAGE_SIZE);
+			printk("pte:0x%x,pmd:0x%x\n",pte,pmd);
 			set_pmd(pmd,__pmd(_KERNEL_TABLE+__pa(pte)));
 			if(pte != pte_offset(pmd,0))
 				BUG();
 
 		
 			for(k = 0; k < PTRS_PER_PTE;pte++,k++){
-				vaddr = i+PGDIR_SIZE+j*PMD_SIZE+k*PAGE_SIZE;
+				vaddr = i*PGDIR_SIZE+j*PMD_SIZE+k*PAGE_SIZE;
 				if(end && vaddr >=end)
 					break;
-
+		//		printk("pte:0x%x\n",pte);
 				*pte = mk_pte_phys(__pa(vaddr),PAGE_KERNEL);
-		
+	
+		//		printk("vaddr is 0x%x,pa:0x%x\n",vaddr,__pa(vaddr));	
+		//		printk("k:%d,*pte is 0x%x\n",k,*pte);
 			}	
 		}
 	}
-		
-
+	
+//	printk("before fix_to_virt\n");
+//	while(1);	
 	vaddr = __fix_to_virt(__end_of_fixed_address - 1) & PMD_MASK;
 	fixrange_init(vaddr,0,pgd_base);
 
@@ -137,14 +155,17 @@ static void __init pagetable_init(void)
 	pte = pte_offset(pmd,vaddr);
 	
 	pkmap_page_table = pte;
+
+#if X86_PAE
 	pgd_base[0] = pgd_base[USER_PTRS_PER_PGD];
-			
+#endif			
 
 }
 
 void __init paging_init(void)
 {
 
+	printk("into paging init\n");
 	pagetable_init();
 	__asm__("movl %%ecx,%%cr3"::"c"(__pa(swapper_pg_dir)));
 

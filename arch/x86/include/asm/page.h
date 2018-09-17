@@ -4,11 +4,11 @@
 #ifndef __ASSEMBLY__
 #include <linux/printk.h>
 
-typedef struct { unsigned long pte_low,pte_high;} pte_t;
-typedef struct { unsigned long long pmd;}pmd_t;
-typedef struct { unsigned long long pgd;}pgd_t;
+typedef struct { unsigned int pte_low;} pte_t;
+typedef struct { unsigned int pmd;}pmd_t;
+typedef struct { unsigned int pgd;}pgd_t;
 
-typedef struct { unsigned long pgprot;} pgprot_t;
+typedef struct { unsigned int pgprot;} pgprot_t;
 
 
 
