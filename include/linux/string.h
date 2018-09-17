@@ -3,4 +3,7 @@
 #include <linux/types.h>
 
 extern void *memset(void*,int,__kernel_size_t);
+
+extern int memcmp(const void *,const void*,size_t);
+extern void *memcpy(void *,const void*,size_t );
 #endif

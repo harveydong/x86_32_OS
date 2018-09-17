@@ -287,5 +287,8 @@ void __init setup_arch(char **cmdline_p)
 	paging_init();
 //	printk("virt to phys:%0x\n",virt_to_phys(0xc0002000));
 
+	if(smp_found_config)
+		get_smp_config();
+
 
 }

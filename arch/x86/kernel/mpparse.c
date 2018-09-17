@@ -3,10 +3,25 @@
 #include <asm/page.h>
 #include <linux/bootmem.h>
 #include <asm/io.h>
+#include <linux/string.h>
+#include <asm/io_apic.h>
+#include <asm/apicdef.h>
+
+
 
 
 int smp_found_config;
 static struct intel_mp_floating *mpf_found;
+int pic_mode;
+unsigned long mp_lapic_addr;
+
+unsigned int boot_cpu_id = -1UL;
+static unsigned int num_processors;
+
+unsigned long phys_cpu_present_map;
+
+int apic_version[MAX_APICS];
+
 
 static int __init mpf_checksum(unsigned char *mp,int len)
 {
@@ -75,4 +90,248 @@ void __init find_smp_config(void)
 {
 
 	find_intel_smp();
+}
+
+
+static char __init *mpc_family(int family,int model)
+{
+	static char n[32];
+	static char *model_defs[] = {
+		"80486DX","80486DX",
+		"80486SX","80486DX/2 or 80487",
+		"80486SL","80486SX/2",
+		"Unknown","80486DX/2-WB"
+		"ZX-CHX001","ZX-CHX002"
+	};
+
+	switch(family){
+		case 0x04:
+			if(model < 10)
+				return model_defs[model];
+			break;
+
+		case 0x05:
+			return ("Pentium(tm)");
+			
+		case 0x06:
+			return ("Pentium(tm) Pro");
+		
+
+	}
+
+	printk("Unknow CPU [%d:%d]",family,model);
+
+	return 1;
+}
+
+static void __init MP_processor_info(struct mpc_config_processor *m)
+{
+	int ver;
+
+	if(!(m->mpc_cpuflag &CPU_ENABLED)){
+		return;
+	}
+
+	printk("Processor #%d %s APIC version %d\n",m->mpc_apicid,mpc_family((m->mpc_cpufeature & CPU_FAMILY_MASK) >> 8,(m->mpc_cpufeature &CPU_MODEL_MASK) >> 4),m->mpc_apicver);
+
+	if (m->mpc_featureflag&(1<<0))
+		printk("    Floating point unit present.\n");
+	if (m->mpc_featureflag&(1<<7))
+		printk("    Machine Exception supported.\n");
+	if (m->mpc_featureflag&(1<<8))
+		printk("    64 bit compare & exchange supported.\n");
+	if (m->mpc_featureflag&(1<<9))
+		printk("    Internal APIC present.\n");
+	if (m->mpc_featureflag&(1<<11))
+		printk("    SEP present.\n");
+	if (m->mpc_featureflag&(1<<12))
+		printk("    MTRR  present.\n");
+	if (m->mpc_featureflag&(1<<13))
+		printk("    PGE  present.\n");
+	if (m->mpc_featureflag&(1<<14))
+		printk("    MCA  present.\n");
+	if (m->mpc_featureflag&(1<<15))
+		printk("    CMOV  present.\n");
+	if (m->mpc_featureflag&(1<<16))
+		printk("    PAT  present.\n");
+	if (m->mpc_featureflag&(1<<17))
+		printk("    PSE  present.\n");
+	if (m->mpc_featureflag&(1<<18))
+		printk("    PSN  present.\n");
+	if (m->mpc_featureflag&(1<<19))
+		printk("    Cache Line Flush Instruction present.\n");
+	/* 20 Reserved */
+	if (m->mpc_featureflag&(1<<21))
+		printk("    Debug Trace and EMON Store present.\n");
+	if (m->mpc_featureflag&(1<<22))
+		printk("    ACPI Thermal Throttle Registers  present.\n");
+	if (m->mpc_featureflag&(1<<23))
+		printk("    MMX  present.\n");
+	if (m->mpc_featureflag&(1<<24))
+		printk("    FXSR  present.\n");
+	if (m->mpc_featureflag&(1<<25))
+		printk("    XMM  present.\n");
+	if (m->mpc_featureflag&(1<<26))
+		printk("    Willamette New Instructions  present.\n");
+	if (m->mpc_featureflag&(1<<27))
+		printk("    Self Snoop  present.\n");
+	/* 28 Reserved */
+	if (m->mpc_featureflag&(1<<29))
+		printk("    Thermal Monitor present.\n");
+	/* 30, 31 Reserved */
+
+
+	if (m->mpc_cpuflag & CPU_BOOTPROCESSOR) {
+		printk("    Bootup CPU\n");
+		boot_cpu_id = m->mpc_apicid;
+	}
+	num_processors++;	
+
+
+	if(m->mpc_apicid > MAX_APICS){
+		printk("Processor #%d INVALID,(MAX ID:%d)\n",m->mpc_apicid,MAX_APICS);
+		return;
+	}
+
+	ver = m->mpc_apicver;
+	
+	phys_cpu_present_map |= 1 << m->mpc_apicid;
+	
+	if(ver == 0x0)
+	{
+		printk("BIOS bug,APIC version is 0 for CPU #%d!,fixing up to 0x10\n",m->mpc_apicid);
+		ver = 0x10;
+	}
+
+	apic_version[m->mpc_apicid] = ver;
+}
+
+
+static void __init MP_ioapic_info(struct mpc_config_ioapic*m)
+{
+	if((!m->mpc_flags & MPC_APIC_USABLE))
+		return;
+
+	printk("IO-APIC #%d Version %d at 0x%lx.\n",m->mpc_apicid,m->mpc_apicver,m->mpc_apicaddr);
+
+	if(nr_ioapics >= MAX_IO_APICS){
+		printk("IO apic num exceeded\n");
+		BUG();
+	}
+
+	mp_ioapics[nr_ioapics] = *m;
+
+	nr_ioapics++;
+}
+static int __init smp_read_mpc(struct mp_config_table *mpc)
+{
+	char str[16];
+	int count = sizeof(*mpc);
+	
+	unsigned char *mpt = ((unsigned char*)mpc)+count;
+
+	if(memcmp(mpc->mpc_signature,MPC_SIGNATURE,4)){
+		printk("SMP mptable bad\n");
+		return 1;
+	}
+
+	if(mpf_checksum((unsigned char*)mpc,mpc->mpc_length)){
+		printk("SMP mptable:checksum error\n");
+		return 1;
+	}
+
+	if(mpc->mpc_spec != 0x01 && mpc->mpc_spec != 0x04){
+		printk("Bad Config Table Version\n");
+		return 1;
+	}
+
+	memcpy(str,mpc->mpc_oem,8);
+	str[8] = 0;
+	printk("OEM ID:%s ",str);
+	
+	memcpy(str,mpc->mpc_productid,12);
+	str[12] = 0;
+	printk("Product ID:%s ",str);
+
+	printk("APIC at:0x%lx\n",mpc->mpc_lapic);
+	
+	mp_lapic_addr = mpc->mpc_lapic;
+
+	while(count < mpc->mpc_length){
+		switch(*mpt){
+			case MP_PROCESSOR:
+			{
+				struct mpc_config_processor *m = (struct mpc_comfig_processor*)mpt;
+					
+				MP_processor_info(m);
+				mpt += sizeof(*m);
+				count += sizeof(*m);
+				break;
+			}
+	
+			case MP_IOAPIC:
+			{
+				struct mpc_config_ioapic *m = (struct mpc_config_ioapic*)mpt;
+				MP_ioapic_info(m);
+				mpt += sizeof(*m);	
+				count += sizeof(*m);
+				break;	
+	
+			}
+		
+			case MP_INTSRC:
+			{
+				struct mpc_config_intsrc *m = (struct mpc_config_intsrc*)mpt;
+				printk("This is MP INTSRC\n");
+				mpt += sizeof(*m);
+				count += sizeof(*m);
+				break;
+			}
+
+			case MP_LINTSRC:
+			{
+				struct mpc_config_lintsrc *m = (struct mpc_config_lintsrc*)mpt;
+				printk("this is MP LINTSRC\n");
+				mpt += sizeof(*m);
+				count += sizeof(*m);
+				break;
+			}
+			
+			case MP_BUS:
+			{
+				struct mpc_config_bus *m = (struct mpc_config_bus*)mpt;
+				printk("this is MP bus\n");
+				mpt += sizeof(*m);
+				count += sizeof(*m);
+				break;
+			}
+		}
+	}
+
+	return num_processors;
+	
+}
+
+
+void __init get_smp_config(void)
+{
+	struct intel_mp_floating *mpf = mpf_found;
+
+	printk("MultiProcessor Specification V1.%d\n",mpf->mpf_specification);
+
+	if(mpf->mpf_feature2 &(1<<7)){
+		printk("IMCR and PIC compatibility mode.\n");
+		pic_mode =1;
+	}else{
+		printk("Virutal Wire compatibility mode.\n");
+		pic_mode = 0;
+	}
+
+	if(mpf->mpf_feature1 != 0){
+		printk("Default MP configuration #%d\n",mpf->mpf_feature1);
+	}else if(mpf->mpf_physptr){
+		printk("mpf physptr is NOT null\n");
+	
+		smp_read_mpc((void*)mpf->mpf_physptr);
+	}
 }
