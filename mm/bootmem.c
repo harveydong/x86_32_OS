@@ -113,7 +113,6 @@ static void *__init __alloc_bootmem_core(bootmem_data_t *bdata,unsigned long siz
 	areasize = (size + PAGE_SIZE - 1)/PAGE_SIZE;
 	incr = align >> PAGE_SHIFT ?:1;
 
-	printk("size is %d\n",size);
 restart_scan:
 
 	for(i = preferred; i < eidx; i += incr){
@@ -132,18 +131,15 @@ fail_block:
 		;
 	}
 
-	printk("1here..\n");
 	if(preferred){
 		preferred = 0;
 		goto restart_scan;
 	}
 
 found:
-	printk("2here..\n");
 	if(start >= eidx)
 		BUG();
 	
-	printk("3here..\n");
 
 	if(align <= PAGE_SIZE && bdata->last_offset && bdata->last_pos+1 == start){
 		offset = (bdata->last_offset + align - 1) & ~(align -1);
@@ -154,14 +150,12 @@ found:
 		if(size < remaining_size){
 			areasize = 0;
 			bdata->last_offset = offset + size;
-			printk("4here..\n");
 			ret = phys_to_virt(bdata->last_pos*PAGE_SIZE + offset + bdata->node_boot_start);
 		}else{
 
 			remaining_size = size - remaining_size;
 			areasize = (remaining_size + PAGE_SIZE -1)/PAGE_SIZE;
 			
-			printk("5here..\n");
 			ret = phys_to_virt(bdata->last_pos*PAGE_SIZE + offset +bdata->node_boot_start);
 			bdata->last_pos = start + areasize - 1;
 			bdata->last_offset = remaining_size;
@@ -176,14 +170,12 @@ found:
 		ret = phys_to_virt(start*PAGE_SIZE + bdata->node_boot_start);
 	}
 
-	printk("6here..\n");
 	for(i = start; i < start + areasize;i++)
 		if(test_and_set_bit(i,bdata->node_bootmem_map)){
 			printk("ERROR and i:%d,node_bootmem_map:%x\n",i,bdata->node_bootmem_map + i);
 
 		}
 
-	printk("7here..and ret:0x%p\n",ret);
 	memset(ret,0,size);
 	return ret;
 }

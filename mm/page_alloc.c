@@ -104,9 +104,7 @@ void __init free_area_init_core(int nid,pg_data_t *pgdat,struct page**gmap,unsig
 		printk("map_size:%d\n",map_size);
  
 		lmem_map = (struct page*)alloc_bootmem_node(pgdat,map_size);
-	}	
- 
-#if 0
+		
 		lmem_map = (struct page*)(PAGE_OFFSET + MAP_ALIGN((unsigned long )lmem_map - PAGE_OFFSET));
 	}
 
@@ -195,7 +193,7 @@ void __init free_area_init_core(int nid,pg_data_t *pgdat,struct page**gmap,unsig
 	}
 
 	build_zonelists(pgdat);
-#endif
+
 }
 void __init free_area_init(unsigned long *zones_size)
 {

@@ -96,13 +96,13 @@ static void __init pagetable_init(void)
 	i = __pgd_offset(PAGE_OFFSET);//kernel space 0xc000_0000
 	pgd = pgd_base + i;
 
-	printk("i is %x,and pgd:0x%p\n",i,pgd);
-	printk("pgd base:0x%x\n",pgd_base);
-	printk("boot user pgd ptrs:%d\n",BOOT_USER_PGD_PTRS);
+	//printk("i is %x,and pgd:0x%p\n",i,pgd);
+//	printk("pgd base:0x%x\n",pgd_base);
+//	printk("boot user pgd ptrs:%d\n",BOOT_USER_PGD_PTRS);
 	for(; i < PTRS_PER_PGD;pgd++,i++)
 	{
 		vaddr = i*PGDIR_SIZE;
-		printk("first for i:%d,vaddr:0x%x,end:0x%x,and k:%d\n",i,vaddr,end,k);
+	//	printk("first for i:%d,vaddr:0x%x,end:0x%x,and k:%d\n",i,vaddr,end,k);
 		if(end && (vaddr >= end))
 			break;
 #if X86_PAE		
@@ -112,7 +112,7 @@ static void __init pagetable_init(void)
 		pmd = (pmd_t*)pgd;
 #endif		
 
-		printk("pmd:0x%x,and pmd_offset:0x%x\n",pmd,pmd_offset(pgd,0));
+	//	printk("pmd:0x%x,and pmd_offset:0x%x\n",pmd,pmd_offset(pgd,0));
 		if(pmd != pmd_offset(pgd,0))
 			BUG();
 
@@ -123,7 +123,7 @@ static void __init pagetable_init(void)
 				break;
 		
 			pte = (pte_t *)alloc_bootmem_low_pages(PAGE_SIZE);
-			printk("pte:0x%x,pmd:0x%x\n",pte,pmd);
+	//		printk("pte:0x%x,pmd:0x%x\n",pte,pmd);
 			set_pmd(pmd,__pmd(_KERNEL_TABLE+__pa(pte)));
 			if(pte != pte_offset(pmd,0))
 				BUG();
