@@ -27,6 +27,9 @@ extern void * __init __alloc_bootmem (unsigned long size, unsigned long align, u
 extern void*__init __alloc_bootmem_node(pg_data_t *pgdat,unsigned long size,unsigned long align,unsigned long goal);
 
 
+#define alloc_bootmem_low(x) \
+	__alloc_bootmem((x), SMP_CACHE_BYTES,0)
+
 #define alloc_bootmem_low_pages(x) \
 	__alloc_bootmem((x),PAGE_SIZE,0)
 

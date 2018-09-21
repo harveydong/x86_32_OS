@@ -2,6 +2,14 @@
 #define __PTRACE_H_
 
 
+
+#define ORIG_EAX 11
+
+#define ES 8
+#define DS 7
+
+
+#ifndef __ASSEMBLY__
 struct pt_regs {
 	long ebx;
 	long ecx;
@@ -19,5 +27,7 @@ struct pt_regs {
 	long esp;
 	int  xss;
 };
+#endif
+
 
 #endif

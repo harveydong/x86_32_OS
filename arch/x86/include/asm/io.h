@@ -34,5 +34,6 @@ static  inline unsigned long virt_to_phys(volatile void *address)
 //#define phys_to_virt(address) __va(address)
 
 #define virt_to_bus virt_to_phys
+#define bus_to_virt phys_to_virt
 
 #endif

@@ -1,6 +1,8 @@
 #include <linux/linkage.h>
 #include <linux/init.h>
 #include <linux/printk.h>
+#include <linux/sched.h>
+
 
 extern void setup_arch(char **);
 
@@ -15,6 +17,9 @@ asmlinkage void __init start_kernel(void)
 
 
 	setup_arch(&command_line);
+
+	trap_init();
+
 	printk("setup arch done!!!!\n");
 	while(1);
 }

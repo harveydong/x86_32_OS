@@ -1,4 +1,6 @@
 #include <asm/processor-flags.h>
+#include <asm/system.h>
+
 #include <asm/processor.h>
 #include <asm/pgtable.h>
 #include <linux/fs.h>
@@ -16,11 +18,19 @@
 #include <asm/smp.h>
 #include <asm/mpspec.h>
 #include <asm/apic.h>
-
+#include <asm/mmu_context.h>
+#include <asm/current.h>
+#include <asm/desc.h>
+#include <asm/atomic.h>
+#include <asm/system.h>
 
 unsigned long mmu_cr4_features = X86_CR4_PAE;
 
 extern char _text,_etext,_edata,_end;
+
+unsigned long cpu_initialized = 0;
+int cpus_initialized = 0;
+__u16 boot_cpu_addr;
 
 
 
@@ -35,9 +45,27 @@ static struct boot_params *setup_params =(struct boot_params*) (empty_zero_page)
 #define EXT_MEM_K (*(unsigned short *)(PARAM + 2))
 #define ALT_MEM_K (*(unsigned short *)(PARAM + 0x1e0))
 
+
+
+
+
+
+
 #define E820_MAP_NR (int)(setup_params->e820_entries)
 
 #define E820_MAP ((struct e820entry *)(setup_params->e820))
+
+
+
+struct resource standard_io_resources[] = {
+	[0] = {.name = "dma1",.start = 0x00, .end = 0x1f, .flags = IORESOURCE_BUSY},
+	[1] = {.name = "pic1", .start =  0x20, .end = 0x3f, .flags = IORESOURCE_BUSY},
+	[2] = {.name = "timer", .start = 0x40, .end = 0x5f, .flags = IORESOURCE_BUSY},
+	[3] = {.name = "keyboard", .start = 0x60, .end = 0x6f, .flags = IORESOURCE_BUSY},
+	[4] = {.name = "dma page reg", .start = 0x80, .end = 0x8f, .flags = IORESOURCE_BUSY}
+};
+#define STANDARD_IO_RESOURCES (sizeof(standard_io_resources) /sizeof(struct resource))
+
 
 static struct resource code_resource = {
 	.name = "Kernel Code",
@@ -65,6 +93,63 @@ struct cpuinfo_x86 boot_cpu_data = {0,0,0,0,-1,1,0,0,-1};
 struct e820map e820 = {0};
 
 
+static inline void load_LDT(struct mm_struct *mm)
+{
+	int cpu = smp_processor_id();
+	void *segments = mm->context.segments;
+	int count = LDT_ENTRIES;
+	
+	if(!segments){
+		segments = &default_ldt[0];
+		count = 5;
+	}
+
+	set_ldt_desc(cpu,segments,count);
+	__load_LDT(cpu);
+}
+
+void __init cpu_init(void)
+{
+	int nr = smp_processor_id();
+
+	struct tss_struct *t = &init_tss[nr];
+	
+	if(test_and_set_bit(nr,&cpu_initialized)){
+		printk("CPU #%d already initialized\n",nr);
+		for(;;)__sti();
+	}
+	printk("Initializing CPU#%d\n",nr);	
+
+
+	__asm__ __volatile__("lgdt %0":"=m"(gdt_descr));
+	__asm__ __volatile__("lidt %0":"=m"(idt_descr));
+	
+	__asm__("pushfl;andl $0xffffbfff,(%esp);popfl");
+	
+	atomic_inc(&init_mm.mm_count);
+	current->active_mm = &init_mm;
+	
+	if(current->mm)
+		BUG();
+
+	enter_lazy_tlb(&init_mm,current,nr);
+
+	t->esp0 = current->thread.esp0;
+	set_tss_desc(nr,t);
+		
+	gdt_table[__TSS(nr)].b &= 0xFFFFFDFF;
+	load_TR(nr);
+	load_LDT(&init_mm);
+
+#define CD(reg) __asm__("movl %0,%%db"#reg::"r"(0));
+	CD(0);CD(1);CD(2);CD(3);	
+#undef CD
+
+	current->flags &= ~PF_USEDFPU;
+	current->used_math = 0;
+	stts();
+
+}
 
 void __init add_memory_region(u32 start,u32 size,u32 type)
 {
@@ -188,6 +273,50 @@ void __init setup_memory_region(void)
 	printk("BIOS-provied physical RAM map:\n");
 	print_memory_map(who);
 }
+
+#define MAXROMS 6
+static struct resource rom_resources[MAXROMS] = {
+	[0] = {
+		.name = "System ROM",
+		.start = 0xF0000,
+		.end = 0xFFFFF,
+		.flags = IORESOURCE_BUSY
+	},
+	[1] = {
+
+		.name = "Video ROM",	
+		.start = 0xc0000,
+		.end = 0xc7fff,
+		.flags = IORESOURCE_BUSY
+	}
+
+};
+
+#define romsignature(x) (*(unsigned short*)(x) == 0xaa55)
+
+static void __init probe_roms(void)
+{
+	int roms = 1;
+	unsigned long base;
+	unsigned char *romstart;
+
+	request_resource(&iomem_resource,rom_resources+0);
+
+
+	for(base = 0xC0000; base < 0xE0000; base += 2048){
+		romstart = bus_to_virt(base);
+		if(!romsignature(romstart))
+			continue;
+		
+		request_resource(&iomem_resource,rom_resources + roms);
+		roms++;
+		break;
+	}
+
+	
+}
+
+
 void __init setup_arch(char **cmdline_p)
 {
 
@@ -294,4 +423,42 @@ void __init setup_arch(char **cmdline_p)
 
 
 	init_apic_mapping();
+
+	probe_roms();
+
+
+	for(i = 0; i < e820.nr_map;i++){
+
+		struct resource *res;
+		if(e820.map[i].addr + e820.map[i].size > 0x100000000ULL)
+			continue;
+		
+		res = alloc_bootmem_low(sizeof(struct resource));
+		switch(e820.map[i].type){
+		case E820_RAM:
+			res->name = "System RAM";break;
+		case E820_ACPI: 
+			res->name = "ACPI Tables";break;
+		case E820_NVS: 
+			res->name = "ACPI Non-volatile Storage";break;
+
+		default:
+			res->name = "Reserved";
+		
+		}
+
+		res->start = e820.map[i].addr;
+		res->end = res->start + e820.map[i].size - 1;
+		request_resource(&iomem_resource,res);
+		if(e820.map[i].type == E820_RAM){
+			request_resource(res,&code_resource);
+			request_resource(res,&data_resource);
+		}
+	}
+
+	request_resource(&iomem_resource,&vram_resource);
+
+	for(i = 0; i < STANDARD_IO_RESOURCES;i++){
+		request_resource(&ioport_resource,standard_io_resources + i);
+	}
 }

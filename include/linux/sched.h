@@ -1,5 +1,9 @@
 #ifndef __SCHED_H_
 #define __SCHED_H_
+#include <linux/linkage.h>
+
+#ifndef __ASSEMBLY__
+
 #include <linux/list.h>
 #include <asm/page.h>
 #include <linux/personality.h>
@@ -10,11 +14,15 @@
 #include <asm/semaphore.h>
 #include <asm/param.h>
 #include <linux/stddef.h>
+#include <asm/mmu.h>
 
 
 #define SCHED_OTHER 0
 #define SCHED_FIFO 1
 #define SCHED_RR 2
+
+
+#define PF_USEDFPU 0x00100000
 
 struct mm_struct{
 	struct vm_area_struct *mmap;
@@ -31,6 +39,7 @@ struct mm_struct{
 	unsigned long start_code,end_code,start_data,end_data;
 	unsigned long start_brk,brk;
 
+	mm_context_t context;
 };
 
 #define DEF_COUNTER (10*HZ/100)
@@ -70,6 +79,8 @@ struct task_struct{
 	struct task_struct *p_opptr,*p_pptr;
 	char comm[16];		
 
+	struct thread_struct thread;
+	unsigned short used_math;
 };
 
 
@@ -109,5 +120,13 @@ union task_union {
 	unsigned long stack[INIT_TASK_SIZE/sizeof(long)];
 
 };
+
+extern asmlinkage void schedule(void);
+
+extern void cpu_init(void);
+extern void trap_init(void);
+#endif
+
+
 
 #endif

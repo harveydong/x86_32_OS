@@ -7,7 +7,7 @@
 #define local_irq_restore(x) __restore_flags(x)
 
 
-extern inline void __set_bit64(unsigned long *ptr,unsigned int low,unsigned int high)
+static inline void __set_bit64(unsigned long *ptr,unsigned int low,unsigned int high)
 {
 	__asm__ volatile(
 			"1:movl (%0),%%eax;movl 4(%0),%%edx;cmpxchg8b (%0);jnz 1b"
@@ -21,11 +21,27 @@ extern inline void __set_bit64(unsigned long *ptr,unsigned int low,unsigned int 
 #define ll_low(x) *(((unsigned int*)&(x))+0)
 #define ll_high(x) *(((unsigned int*)&(x))+0)
 
-extern void inline __set_64bit_var(unsigned long *ptr,unsigned long value)
+static void inline __set_64bit_var(unsigned long *ptr,unsigned long value)
 {
 	__set_bit64(ptr,ll_low(value),ll_high(value));
 }
 
 #define set_64bit(ptr,value) \
 	__set_64bit_var(ptr,value)
+
+#define __sti() __asm__ __volatile__("sti":::"memory");
+
+
+#define read_cr0() ({\
+	unsigned int __dummy;\
+	__asm__(\
+	"movl %%cr0,%0\n\t"\
+	:"=r"(__dummy));\
+	__dummy;\
+})
+
+#define write_cr0(x) \
+	__asm__("movl %0,%%cr0"::"r"(x))
+
+#define stts() write_cr0(8|read_cr0())
 #endif
