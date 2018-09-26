@@ -14,6 +14,7 @@
 #define VM_EXEC		0x00000004
 #define VM_SHARED	0x00000008
 
+
 struct vm_area_struct{
 	struct mm_struct *vm_mm;
 	unsigned long vm_start;

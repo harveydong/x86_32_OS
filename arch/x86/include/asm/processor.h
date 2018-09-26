@@ -7,6 +7,8 @@
 #include <asm/segment.h>
 #include <asm/desc.h>
 
+
+
 extern unsigned long mmu_cr4_features;
 #define IO_BITMAP_SIZE 32
 #define INVALID_IO_BITMAP_OFFSET 0x8000
@@ -66,6 +68,9 @@ struct cpuinfo_x86{
 	char x86_vendor_id[16];
 	char x86_model_id[64];
 	int x86_cache_size;
+
+
+	unsigned long loops_per_jiffy;
 };
 
 struct i387_fsave_struct{
@@ -235,8 +240,10 @@ static inline void set_in_cr4(unsigned long mask)
 	
 extern struct tss_struct init_tss[NR_CPUS];
 
-#define init_stack (init_task_union.stack)
 
+
+
+#define init_stack (init_task_union.stack)
 
 
 #endif

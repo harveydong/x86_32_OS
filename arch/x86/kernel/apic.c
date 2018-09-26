@@ -4,6 +4,23 @@
 #include <asm/fixmap.h>
 #include <asm/apic.h>
 #include <asm/io_apic.h>
+#include <asm/ptrace.h>
+
+void smp_apic_timer_interrupt(struct pt_regs *regs)
+{
+
+}
+
+asmlinkage void smp_spurious_interrupt(void)
+{
+
+}
+
+
+asmlinkage void smp_error_interrupt(void)
+{
+
+}
 
 void __init init_apic_mapping(void)
 {
@@ -48,7 +65,3 @@ void __init init_apic_mapping(void)
 	
 }
 
-asmlinkage void smp_error_interrupt(void)
-{
-
-}

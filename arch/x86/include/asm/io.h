@@ -1,5 +1,5 @@
-#ifndef __IO_H_
-#define __IO_H_
+#ifndef __ASM_IO_H_
+#define __ASM_IO_H_
 #include <asm/page.h>
 
 static inline unsigned short readw(const volatile void *addr)
@@ -15,6 +15,36 @@ static inline void writew(unsigned short val,volatile void *addr)
 {
 	asm volatile("movw %0,%1"::"r"(val),"m"(*(volatile unsigned short *)addr):"memory");
 }
+
+#if 0
+static inline void outb(unsigned char value,unsigned short port)
+{
+	__asm__ __volatile__("outb %b0,%w1"::"a"(value),"Nd"(port));
+}
+#endif
+
+static inline void outb_p(unsigned char value,unsigned short port)
+{
+	__asm__ __volatile("outb %b0,%w1"\
+			"\noutb %%al,$0x80"\
+			::"a"(value),"Nd"(port));
+}
+
+static inline void outsb(unsigned short port,const void *addr,unsigned int count)
+{
+	__asm__ __volatile__("rep;outsb":"=S"(addr),"=c"(count):"d"(port),"0"(addr),"1"(count));
+}
+
+static inline void outsw(unsigned short port ,const void *addr,unsigned int count)
+{
+	__asm__ __volatile__("rep;outsw":"=S"(addr),"=c"(count):"d"(port),"0"(addr),"1"(count));
+}
+
+static inline void outsl(unsigned short port ,const void *addr,unsigned int count)
+{
+	__asm__ __volatile__("rep;outsl":"=S"(addr),"=c"(count):"d"(port),"0"(addr),"1"(count));
+}
+
 
 
 #define IO_SPACE_LIMIT 0xffff

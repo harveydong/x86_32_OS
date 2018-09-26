@@ -3,7 +3,6 @@
 #include <linux/linkage.h>
 
 #ifndef __ASSEMBLY__
-
 #include <linux/list.h>
 #include <asm/page.h>
 #include <linux/personality.h>
@@ -16,13 +15,16 @@
 #include <linux/stddef.h>
 #include <asm/mmu.h>
 
-
 #define SCHED_OTHER 0
 #define SCHED_FIFO 1
 #define SCHED_RR 2
 
 
 #define PF_USEDFPU 0x00100000
+
+
+#define DEF_COUNTER (10*HZ/100)
+#define DEF_NICE (0)
 
 struct mm_struct{
 	struct vm_area_struct *mmap;
@@ -42,21 +44,6 @@ struct mm_struct{
 	mm_context_t context;
 };
 
-#define DEF_COUNTER (10*HZ/100)
-#define DEF_NICE (0)
-
-
-#define INIT_MM(name) \
-{	.mmap = &init_mmap,\
-	.mmap_avl = NULL,\
-	.mmap_cache = NULL,\
-	.pgd = swapper_pg_dir,\
-	.mm_users = ATOMIC_INIT(2),\
-	.mm_count = ATOMIC_INIT(1),\
-	.map_count = 1,\
-	.mmap_sem = __MUTEX_INITIALIZER(name.mmap_sem),\
-	.mmlist = LIST_HEAD_INIT(name.mmlist),\
-}
 
 struct task_struct{
 	volatile long state;
@@ -82,6 +69,17 @@ struct task_struct{
 	struct thread_struct thread;
 	unsigned short used_math;
 };
+#define INIT_MM(name) \
+{	.mmap = &init_mmap,\
+	.mmap_avl = NULL,\
+	.mmap_cache = NULL,\
+	.pgd = swapper_pg_dir,\
+	.mm_users = ATOMIC_INIT(2),\
+	.mm_count = ATOMIC_INIT(1),\
+	.map_count = 1,\
+	.mmap_sem = __MUTEX_INITIALIZER(name.mmap_sem),\
+	.mmlist = LIST_HEAD_INIT(name.mmlist),\
+}
 
 
 extern struct mm_struct init_mm;
@@ -114,6 +112,19 @@ extern struct task_struct init_task;
 #define INIT_TASK_SIZE 2048*sizeof(long)
 #endif
 
+static inline struct task_struct *get_current(void)
+{
+	struct task_struct *current;
+
+	__asm__("andl %%esp,%0;":"=r"(current):"0"(~8191UL));
+	return current;
+}
+#define current get_current()
+#define smp_processor_id() (current->processor)
+
+extern struct cpuinfo_x86 cpu_data[];
+
+#define current_cpu_data cpu_data[smp_processor_id()]
 
 union task_union {
 	struct task_struct task;

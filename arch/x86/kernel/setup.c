@@ -19,7 +19,6 @@
 #include <asm/mpspec.h>
 #include <asm/apic.h>
 #include <asm/mmu_context.h>
-#include <asm/current.h>
 #include <asm/desc.h>
 #include <asm/atomic.h>
 #include <asm/system.h>

@@ -4,6 +4,7 @@
 #define CPP_ASMLINKAGE 
 #define asmlinkage CPP_ASMLINKAGE __attribute__((regparm(0)))
 
+#define SYMBOL_NAME_STR(X) #X
 #define SYMBOL_NAME_LABEL(X)  X##:
 #define SYMBOL_NAME(X) X
 

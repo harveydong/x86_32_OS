@@ -1,9 +1,12 @@
 #include <linux/init.h>
 #include <asm/page.h>
 #include <linux/bootmem.h>
+#include <linux/threads.h>
+#include <asm/processor.h>
 
 static unsigned char *trampoline_base;
 
+struct cpuinfo_x86 cpu_data[NR_CPUS];
 
 void __init smp_alloc_memory(void)
 {
