@@ -5,6 +5,14 @@
 #define ADDR (*(volatile long*)addr)
 
 
+static inline void clear_bit(int nr,volatile void *addr)
+{
+	__asm__ volatile(LOCK_PREFIX
+		"btrl %1,%0"
+		:"=m"(ADDR)
+		:"Ir"(nr));
+}
+
 static inline void set_bit(int nr,volatile void*addr)
 {
 	__asm__ volatile(LOCK_PREFIX

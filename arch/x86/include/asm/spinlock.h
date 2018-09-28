@@ -7,6 +7,8 @@ typedef struct {
 	volatile unsigned int lock;
 }spinlock_t;
 
+#define spin_is_locked(x) (*(volatile char*)(&(x)->lock) <=0)
+
 #define spin_lock_string \
 	"\n1:\t"\	
 	"lock; decb %0\n\t" \

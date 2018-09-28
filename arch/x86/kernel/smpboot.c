@@ -6,6 +6,8 @@
 
 static unsigned char *trampoline_base;
 
+int smp_num_cpus = 1;
+
 struct cpuinfo_x86 cpu_data[NR_CPUS];
 
 void __init smp_alloc_memory(void)

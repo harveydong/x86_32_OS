@@ -12,6 +12,8 @@ struct irqaction {
 	struct irqaction *next;
 };
 
+extern spinlock_t global_bh_lock;
+
 asmlinkage void do_softirq(void);
 
 

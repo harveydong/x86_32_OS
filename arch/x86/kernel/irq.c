@@ -3,6 +3,14 @@
 #include <asm/irq.h>
 #include <asm/apic.h>
 #include <asm/signal.h>
+#include <asm/system.h>
+#include <linux/irq_cpustat.h>
+#include <asm/bitops.h>
+#include <asm/hardirq.h>
+#include <asm/smp.h>
+#include <linux/interrupt.h>
+#include <linux/sched.h>
+
 
 volatile unsigned long irq_err_count;
 
@@ -64,4 +72,84 @@ int setup_irq(unsigned int irq,struct irqaction *new)
 	}
 
 	spin_lock_irqsave(&desc->lock,flags);
+}
+
+
+unsigned char global_irq_holder = NO_PROC_ID;
+unsigned volatile long global_irq_lock;
+
+#define MAXCOUNT 10000000
+#define EFLAGS_IF_SHIFT 9
+
+static inline void wait_on_irq(int cpu)
+{
+	int count = MAXCOUNT;
+
+	for(;;){
+		if(!irqs_running())
+			if(local_bh_count(cpu) || !spin_is_locked(&global_bh_lock))
+				break;
+
+		clear_bit(0,&global_irq_lock);
+
+		for(;;){
+			if(!--count){
+				printk("wait on irq\n");
+				count = ~0;
+			}
+			__sti();
+			__cli();
+			if(irqs_running())
+				continue;
+			if(global_irq_lock)
+				continue;	
+			if(!local_bh_count(cpu) && spin_is_locked(&global_bh_lock))
+				continue;
+			if(!test_and_set_bit(0,&global_irq_lock))
+				break;
+		}	
+	}
+}
+
+static inline void get_irqlock(int cpu)
+{
+	if(test_and_set_bit(0,&global_irq_lock)){
+		if((unsigned char)cpu == global_irq_holder)
+			return;
+
+		do{
+			do{
+
+			}while(test_bit(0,&global_irq_lock));
+		}while(test_and_set_bit(0,&global_irq_lock));
+	}
+
+	wait_on_irq(cpu);
+
+	global_irq_holder = cpu;
+}
+void __global_cli(void)
+{
+	unsigned int flags;
+
+	__save_flags(flags);
+	if(flags & (1<<EFLAGS_IF_SHIFT)){
+		int cpu = smp_processor_id();
+		__cli();
+
+		if(!local_irq_count(cpu))
+			get_irqlock(cpu);
+	}
+}
+
+
+void __global_sti(void)
+{
+	int cpu = smp_processor_id();
+	
+
+	if(!local_irq_count(cpu))
+		release_irqlock(cpu);
+
+	__sti();
 }

@@ -29,8 +29,8 @@ static void inline __set_64bit_var(unsigned long *ptr,unsigned long value)
 #define set_64bit(ptr,value) \
 	__set_64bit_var(ptr,value)
 
-#define __sti() __asm__ __volatile__("sti":::"memory");
-
+#define __sti() __asm__ __volatile__("sti":::"memory")
+#define __cli() __asm__ __volatile__("cli":::"memory")
 
 #define read_cr0() ({\
 	unsigned int __dummy;\
@@ -48,4 +48,12 @@ static void inline __set_64bit_var(unsigned long *ptr,unsigned long value)
 
 
 #define mb() __asm__ __volatile__("sfence":::"memory")
+
+#define __save_flags(x) __asm__ __volatile__("pushfl;popl %0":"=g"(x):)
+
+extern void __global_cli(void);
+extern void __global_sti(void);
+
+#define cli() __global_cli()
+#define sti() __global_sti()
 #endif

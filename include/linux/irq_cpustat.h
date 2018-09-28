@@ -17,4 +17,5 @@ extern irq_cpustat_t irq_stat[];
 #define __IRQ_STAT(cpu,member) (irq_stat[cpu].member)
 
 #define local_irq_count(cpu) __IRQ_STAT((cpu),__local_irq_count)
+#define local_bh_count(cpu) __IRQ_STAT((cpu),__local_bh_count)
 #endif

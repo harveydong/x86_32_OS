@@ -7,6 +7,7 @@
 #include <asm/hw_irq.h>
 #include <linux/sched.h>
 #include <asm/desc.h>
+#include <linux/printk.h>
 
 struct desc_struct idt_table[256] __attribute__((__section__(".data.idt"))) = {{0,0},};
 
@@ -14,7 +15,7 @@ struct desc_struct default_ldt[] = {{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 static void inline do_trap(int trapnr,int signr,char*str,int vm86,struct pt_regs *regs,long error_code,siginfo_t *info)
 {
-
+	printk("into do trap,and trapnr:%d\n",trapnr);
 }
 
 
@@ -26,7 +27,7 @@ asmlinkage void do_nmi(struct pt_regs *regs,long error_code)
 
 asmlinkage void do_debug(struct pt_regs *regs,long error_code)
 {
-
+	printk("into do debug\n");
 }
 
 #define DO_VM86_ERROR(trapnr,signr,str,name)\

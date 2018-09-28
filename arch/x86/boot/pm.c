@@ -1,6 +1,6 @@
 #include <asm/segment.h>
 #include <asm/types.h>
-#include <asm/boot.h>
+#include <asm/asmboot.h>
 
 extern struct boot_params params;
 

@@ -162,10 +162,12 @@ static inline __attribute__((noreturn)) void die(void)
 		asm("hlt");
 }
 
+#if 0
 static inline void cli(void)
 {
 	asm volatile("cli");
 }
+#endif
 
 static inline u16 rdfs16(addr_t addr)
 {
@@ -179,10 +181,12 @@ static inline u8 rdfs8(addr_t addr)
 	asm volatile("movb %%fs:%1,%0" : "=q" (v) : "m" (*(u8 *)addr));
 	return v;
 }
+#if 0
 static inline void sti(void)
 {
 	asm volatile("sti");
 }
+#endif
 
 static inline void io_delay(void)
 {
