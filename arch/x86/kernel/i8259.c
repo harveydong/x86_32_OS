@@ -63,11 +63,81 @@ void (*interrupt[NR_IRQS])(void) = {
 
 void disable_8259A_irq(unsigned int irq)
 {
+	unsigned int mask = 1 << irq;
+	unsigned long flags;
 
+	spin_lock_irqsave(&i8259A_lock,flags);
+	cached_irq_mask |= mask;
+
+	if(irq & 8)
+		outb(cached_A1,0xA1);
+	else
+		outb(cached_21,0x21);
+
+	spin_unlock_irqrestore(&i8259A_lock,flags);		
+
+}
+
+static inline int i8259A_irq_real(unsigned int irq)
+{
+	int value;
+	int irqmask = 1 << irq;
+
+	if(irq < 8){
+		outb(0x0B,0x20);
+		value = inb(0x20) & irqmask;
+		outb(0x0A,0x20);	
+		return value;
+	}
+
+	outb(0x0B,0xA0);
+	value = inb(0xA0) & (irqmask >> 8);
+	outb(0x0A,0xA0);
+	return value;
 }
 
 void mask_and_ack_8259A(unsigned int irq)
 {
+	unsigned int irqmask = 1 << irq;
+	unsigned long flags;
+	
+	spin_lock_irqsave(&i8259A_lock,flags);
+	if(cached_irq_mask &irqmask)
+		goto spurious_8259A_irq;
+
+	cached_irq_mask |= irqmask;
+
+handle_real_irq:
+	if(irq &8){
+		inb(0xA1);
+		outb(cached_A1,0xA1);
+		outb(0x60 + (irq&7),0xA0);
+		outb(0x62,0x20);
+	}else{
+		inb(0x21);
+		outb(cached_21,0x21);
+		outb(0x60+irq,0x20);
+	}
+	spin_unlock_irqrestore(&i8259A_lock,flags);
+	return;
+
+spurious_8259A_irq:
+	
+	if(i8259A_irq_real(irq))
+		goto handle_real_irq;
+
+	{
+		static int spurious_irq_mask;
+		if(!(spurious_irq_mask & irqmask)){
+			printk("spurious 8259A interrrupt\n");
+			spurious_irq_mask |= irqmask;
+		}
+		
+		irq_err_count++;
+	
+		goto handle_real_irq;
+	}
+
 
 }
 
@@ -145,7 +215,20 @@ void __init init_ISA_irqs(void)
 	int i;
 	
 	init_8259A(0);
+
+	for(i = 0; i < NR_IRQS;i++){
+		
+		irq_desc[i].status = IRQ_DISABLED;
+		irq_desc[i].action = 0;
+		irq_desc[i].depth = 1;
 	
+		if(i < 16){
+			irq_desc[i].handler = &i8259A_irq_type;
+		}else{
+			irq_desc[i].handler = &no_irq_type;
+		}
+
+	}	
 }
 
 void __init init_IRQ(void)

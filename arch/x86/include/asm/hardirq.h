@@ -1,13 +1,25 @@
 #ifndef __HARDIRQ_H_
 #define __HARDIRQ_H_
 #include <linux/cache.h>
+#include <asm/bitops.h>
+#include <linux/irq_cpustat.h>
 
-typedef struct{
-	unsigned int __softirq_active;
-	unsigned int __softirq_mask;
-	unsigned int __local_irq_count;
-	unsigned int __local_bh_count;
-	unsigned int __syscall_count;
-	unsigned int __nmi_count;
-}____cacheline_aligned irq_cpustat_t;
+
+extern unsigned volatile long global_irq_lock;
+
+
+static inline void irq_enter(int cpu,int irq)
+{
+	++local_irq_count(cpu);
+	
+	while(test_bit(0,&global_irq_lock)){
+		
+	}
+}
+
+static inline void irq_exit(int cpu,int irq)
+{
+	--local_irq_count(cpu);
+}
+
 #endif

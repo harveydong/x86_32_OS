@@ -14,4 +14,12 @@ struct irqaction {
 
 asmlinkage void do_softirq(void);
 
+
+enum{
+	TIMER_BH = 0,
+	TQUEUE_BH
+
+};
+
+extern void init_bh(int nr,void (*routine)(void));
 #endif

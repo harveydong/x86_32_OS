@@ -349,8 +349,26 @@ u16 vga_crtc(void);
 
 void *copy_from_fs(void *dst, addr_t src, size_t len);
 void copy_to_fs(addr_t dst, void *src, size_t len);
-void *memcpy(void *dst,void*src,size_t len);
-void *memset(void *dst,int c,size_t len);
+
+static inline void * memcpy(void * dest,const void *src,size_t count)
+{
+	char *tmp = (char *) dest, *s = (char *) src;
+
+	while (count--)
+		*tmp++ = *s++;
+
+	return dest;
+}
+static inline  void *memset(void *dst,int c,size_t len)
+{
+	char *xs = (char *) dst;
+
+	while (len--)
+		*xs++ = c;
+
+	return dst;
+	
+}
 
 void console_init(void);
 

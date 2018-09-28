@@ -44,4 +44,8 @@ static void inline __set_64bit_var(unsigned long *ptr,unsigned long value)
 	__asm__("movl %0,%%cr0"::"r"(x))
 
 #define stts() write_cr0(8|read_cr0())
+
+
+
+#define mb() __asm__ __volatile__("sfence":::"memory")
 #endif

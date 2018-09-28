@@ -10,6 +10,8 @@
 
 
 #ifndef __ASSEMBLY__
+#include <asm/vm86.h>
+
 struct pt_regs {
 	long ebx;
 	long ecx;
@@ -30,4 +32,8 @@ struct pt_regs {
 #endif
 
 
+#ifdef __KERNEL__
+#define user_mode(regs) ((VM_MASK & (regs)->eflags) || (3 &(regs)->ecx))
+
+#endif
 #endif

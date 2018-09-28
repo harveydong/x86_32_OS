@@ -4,6 +4,8 @@
 #include <linux/interrupt.h>
 #include <asm/irq.h>
 
+
+#define IRQ_DISABLED 2
 struct hw_interrupt_type{
 
 	const char *name;
@@ -28,4 +30,6 @@ typedef struct{
 }irq_desc_t;
 
 extern irq_desc_t irq_desc[NR_IRQS];
+
+extern hw_irq_controller no_irq_type;
 #endif

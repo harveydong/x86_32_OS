@@ -19,7 +19,8 @@ asmlinkage void __init start_kernel(void)
 	setup_arch(&command_line);
 
 	trap_init();
-
+	
+	sched_init();
 	printk("setup arch done!!!!\n");
 	while(1);
 }

@@ -68,4 +68,10 @@ __asm__(\
 
 
 
+static inline void x86_do_profile(unsigned long eip)
+{
+
+}
+
+extern volatile unsigned long irq_err_count;
 #endif

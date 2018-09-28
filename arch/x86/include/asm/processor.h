@@ -243,7 +243,6 @@ extern struct tss_struct init_tss[NR_CPUS];
 
 
 
-#define init_stack (init_task_union.stack)
 
 
 #endif

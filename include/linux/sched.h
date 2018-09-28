@@ -83,7 +83,7 @@ struct task_struct{
 
 
 extern struct mm_struct init_mm;
-extern struct task_struct init_task;
+//extern struct task_struct init_task;
 
 
 #define INIT_TASK(tsk) \
@@ -132,10 +132,23 @@ union task_union {
 
 };
 
+#define PIDHASH_SZ (4096 >> 2)
+
+extern struct task_struct *pidhash[PIDHASH_SZ];
+
+extern union task_union init_task_union;
+
+#define init_task (init_task_union.task)
+#define init_stack (init_task_union.stack)
+
 extern asmlinkage void schedule(void);
 
 extern void cpu_init(void);
 extern void trap_init(void);
+
+extern void sched_init(void);
+
+extern void update_process_times(int user);
 #endif
 
 

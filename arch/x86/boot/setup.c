@@ -58,7 +58,7 @@ static void load_kernel(struct boot_header *header)
 	printf("elf0:%x,elf1:%x,elf2:%x,elf3:%x\n",elf->e_ident[0],elf->e_ident[1],elf->e_ident[2],elf->e_ident[3]);
 	if(elf->e_ident[0] != 0x7f || elf->e_ident[1] != 'E' || elf->e_ident[2] != 'L' || elf->e_ident[3] != 'F'){
 		
-		puts("read here\n");
+		puts("read kernel failed!!!!!!\n");
 		while(1);
 	}
 
@@ -84,15 +84,19 @@ static void load_kernel(struct boot_header *header)
 				block++;
 				load_addr += 512;
 			}
-			//printf("read ok here\n");
+			printf("read ok here\n");
 		//	read_segment((void*)(long)(ph->p_paddr),elf_offset + ph->p_offset,ph->p_filesz);
 			if(ph->p_memsz > ph->p_filesz){
+			
+				printf("ph->pmemsz > files.addr:%0x,and size:%x\n",load_addr,ph->p_memsz-ph->p_filesz);
 				memset((void*)(load_addr),0,ph->p_memsz - ph->p_filesz);
+				printf("after memset\n");
 			}
 		}
 		ph++;
 	}
-	
+
+	printf("read kernel done\n");	
 }
 
 
