@@ -11,9 +11,26 @@
 #include <linux/timex.h>
 #include <asm/desc.h>
 
-spinlock_t i8259A_lock = SPIN_LOCK_UNLOCKED;
 
-static unsigned int cached_irq_mask = 0xFFFF;
+BUILD_COMMON_IRQ()
+
+#define BI(x,y)\
+	BUILD_IRQ(x##y)
+
+#define BUILD_16_IRQS(x)\
+	BI(x,0) BI(x,1)	BI(x,2) BI(x,3) \
+	BI(x,4) BI(x,5)	BI(x,6) BI(x,7) \
+	BI(x,8) BI(x,9)	BI(x,a) BI(x,b) \
+	BI(x,c) BI(x,d)	BI(x,e) BI(x,f) 
+
+BUILD_16_IRQS(0x0)
+BUILD_16_IRQS(0x1) BUILD_16_IRQS(0x2) BUILD_16_IRQS(0x3) BUILD_16_IRQS(0x4) 
+BUILD_16_IRQS(0x5) BUILD_16_IRQS(0x6) BUILD_16_IRQS(0x7) BUILD_16_IRQS(0x8) 
+BUILD_16_IRQS(0x9) BUILD_16_IRQS(0xa) BUILD_16_IRQS(0xb) BUILD_16_IRQS(0xc) BUILD_16_IRQS(0xd)  
+
+#undef BUILD_16_IRQS
+#undef BI
+
 
 
 BUILD_SMP_INTERRUPT(reschedule_interrupt,RESCHEDULE_VECTOR)
@@ -25,19 +42,20 @@ BUILD_SMP_TIMER_INTERRUPT(apic_timer_interrupt,LOCAL_TIMER_VECTOR)
 
 
 
-#define IRQ(x,y) \
-	IRQ##x##y##_interrupt
+#define IRQD(x,y) IRQ##x##y##_interrupt
 
 
 #define IRQLIST_16(x) \
-	IRQ(x,0), IRQ(x,1),IRQ(x,2),IRQ(x,3),\
-	IRQ(x,4), IRQ(x,5),IRQ(x,6),IRQ(x,7), \
-	IRQ(x,8), IRQ(x,9),IRQ(x,a),IRQ(x,b), \
-	IRQ(x,c), IRQ(x,d),IRQ(x,e),IRQ(x,f)
+	IRQD(x,0), IRQD(x,1),IRQD(x,2),IRQD(x,3),\
+	IRQD(x,4), IRQD(x,5),IRQD(x,6),IRQD(x,7), \
+	IRQD(x,8), IRQD(x,9),IRQD(x,a),IRQD(x,b), \
+	IRQD(x,c), IRQD(x,d),IRQD(x,e),IRQD(x,f)
 
 
-void (*interrupt[NR_IRQS])(void) = {
-#if 0	
+
+
+
+void (asmlinkage *interrupt[NR_IRQS])(void) = {
 	IRQLIST_16(0x0),
 	IRQLIST_16(0x1),
 	IRQLIST_16(0x2),
@@ -52,9 +70,16 @@ void (*interrupt[NR_IRQS])(void) = {
 	IRQLIST_16(0xb),
 	IRQLIST_16(0xc),
 	IRQLIST_16(0xd)
-#endif
-
 };
+
+
+#undef IRQD
+#undef IRQLIST_16
+
+
+spinlock_t i8259A_lock = SPIN_LOCK_UNLOCKED;
+
+static unsigned int cached_irq_mask = 0xFFFF;
 
 #define __byte(x,y) (((unsigned char*)&(y))[x])
 
@@ -140,12 +165,6 @@ spurious_8259A_irq:
 
 
 }
-
-static void end_8259A_irq(unsigned int irq)
-{
-
-}
-
 static void enable_8259A_irq(unsigned int irq)
 {
 	unsigned int mask = ~(1 << irq);
@@ -156,6 +175,17 @@ static void enable_8259A_irq(unsigned int irq)
 	cached_irq_mask &= mask;
 	
 }
+
+
+
+static void end_8259A_irq(unsigned int irq)
+{
+	if(!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS))){
+		enable_8259A_irq(irq);
+	}
+}
+
+
 static unsigned int startup_8259A_irq(unsigned int irq)
 {
 	enable_8259A_irq(irq);

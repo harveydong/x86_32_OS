@@ -10,6 +10,8 @@
 #include <asm/smp.h>
 #include <linux/interrupt.h>
 #include <linux/sched.h>
+#include <linux/linkage.h>
+#include <linux/printk.h>
 
 
 volatile unsigned long irq_err_count;
@@ -152,4 +154,13 @@ void __global_sti(void)
 		release_irqlock(cpu);
 
 	__sti();
+}
+
+
+asmlinkage unsigned int do_IRQ(struct pt_regs regs)
+{
+
+	printk("into do IRQ \n");
+	return 0;
+
 }

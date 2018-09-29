@@ -23,8 +23,9 @@ asmlinkage void __init start_kernel(void)
 	setup_arch(&command_line);
 
 	trap_init();
-	
+	init_IRQ();	
 	sched_init();
+
 	printk("setup arch done!!!!\n");
 
 	

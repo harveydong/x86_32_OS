@@ -4,8 +4,11 @@
 #include <linux/interrupt.h>
 #include <asm/irq.h>
 
-
+#define IRQ_INPROGRESS 1
 #define IRQ_DISABLED 2
+#define IRQ_PENDING 4
+
+
 struct hw_interrupt_type{
 
 	const char *name;

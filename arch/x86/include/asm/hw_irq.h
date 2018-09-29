@@ -22,6 +22,10 @@
 #define __STR(x) #x
 #define STR(x) __STR(x)
 
+
+#define IRQ_NAME2(nr) nr##_interrupt(void)
+#define IRQ_NAME(nr) IRQ_NAME2(IRQ##nr)
+
 #define SAVE_ALL \
 	"cld \n\t"\
 	"pushl %es \n\t"\
@@ -36,6 +40,10 @@
 	"movl $"STR(__KERNEL_DS)",%edx\n\t"\
 	"movl %edx,%ds\n\t"\
 	"movl %edx,%es\n\t"
+
+
+/*for all most smp interrupt*/
+
 #define BUILD_SMP_INTERRUPT(x,y) XBUILD_SMP_INTERRUPT(x,y)
 #define XBUILD_SMP_INTERRUPT(x,v) \
 asmlinkage void x(void);\
@@ -50,6 +58,12 @@ __asm__( \
 	"jmp ret_from_intr\n");
 
 
+
+
+
+
+
+/*special for smp timer*/
 #define BUILD_SMP_TIMER_INTERRUPT(x,v) XBUILD_SMP_TIMER_INTERRUPT(x,v)
 #define XBUILD_SMP_TIMER_INTERRUPT(x,v) \
 asmlinkage void x(struct pt_regs *regs);\
@@ -65,6 +79,32 @@ __asm__(\
 	"call "SYMBOL_NAME_STR(smp_##x)"\n\t"\
 	"addl $4,%esp \n\t" \
 	"jmp ret_from_intr \n");
+
+
+
+
+
+
+/*below if external interrupt architecture*/
+
+#define BUILD_COMMON_IRQ()\
+asmlinkage void call_do_IRQ(void);\
+asm(\
+	"\n"__ALIGN_STR"\n"\
+	"common_interrupt:\n\t"\
+	SAVE_ALL\
+	"pushl $ret_from_intr\n\t"\
+	SYMBOL_NAME_STR(call_do_IRQ)":\n\t"\
+	"jmp "SYMBOL_NAME_STR(do_IRQ));
+
+
+#define BUILD_IRQ(nr) \
+asmlinkage void IRQ_NAME(nr);\
+asm(\
+	"\n"__ALIGN_STR"\n"\
+	SYMBOL_NAME_STR(IRQ)#nr"_interrupt:\n\t"\
+	"pushl $"#nr"-256\n\t"\
+	"jmp common_interrupt");
 
 
 
