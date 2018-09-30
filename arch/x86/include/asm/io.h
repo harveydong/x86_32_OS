@@ -23,6 +23,24 @@ static inline void outb(unsigned char value,unsigned short port)
 }
 #endif
 
+static inline unsigned char inb(unsigned short port)
+{
+	unsigned char _v;
+
+	__asm__ __volatile__("inb %w1,%0":"=a"(_v):"Nd"(port));
+	return _v;
+
+}
+static inline unsigned char inb_p(unsigned char port)
+{
+	unsigned char _v;
+	__asm__ __volatile__("inb %w1,%0" \
+			"\noutb %%al,$0x80"\
+			:"=a"(_v):"Nd"(port));
+
+	return _v;
+}
+
 static inline void outb_p(unsigned char value,unsigned short port)
 {
 	__asm__ __volatile("outb %b0,%w1"\

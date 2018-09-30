@@ -14,6 +14,12 @@
 #include <asm/param.h>
 #include <linux/stddef.h>
 #include <asm/mmu.h>
+#include <asm/ptrace.h>
+#include <linux/time.h>
+
+
+
+
 
 #define SCHED_OTHER 0
 #define SCHED_FIFO 1
@@ -148,7 +154,11 @@ extern void trap_init(void);
 
 extern void sched_init(void);
 
+extern void __init time_init(void);
 extern void update_process_times(int user);
+
+
+
 #endif
 
 

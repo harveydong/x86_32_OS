@@ -1,6 +1,7 @@
 #include <linux/list.h>
 #include <linux/printk.h>
 #include <linux/sched.h>
+#include <linux/time.h>
 
 #define TVN_BITS 6
 #define TVR_BITS 8
@@ -66,3 +67,8 @@ void update_process_times(int user_tick)
 		
 	printk("into update process uptimes\n");
 }
+
+
+
+volatile struct timeval xtime __attribute__((aligned(16)));
+

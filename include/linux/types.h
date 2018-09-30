@@ -38,6 +38,12 @@ typedef long long int64;
 typedef unsigned int addr_t;
 typedef unsigned int size_t;
 
+typedef long __kernel_time_t;
+typedef long __kernel_suseconds_t;
+
+typedef __kernel_time_t time_t;
+typedef __kernel_suseconds_t suseconds_t;
+
 #define bool int
 #define NULL ((void*)0)
 
