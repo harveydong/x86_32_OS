@@ -185,7 +185,8 @@ void __init time_init(void)
 			do_get_fast_time = do_gettimeofday;
 			{
 				unsigned long eax = 0,edx = 1000;
-				__asm__ ("divl %2":"=a"(cpu_khz),"=d"(edx):"r"(tsc_quotient));
+				printk("tsc_quotient is %d\n",tsc_quotient);
+				__asm__ ("divl %2":"=a"(cpu_khz),"=d"(edx):"r"(tsc_quotient),"0"(eax),"1"(edx));
 				printk("detected %lu.%031u MHz processor.\n",cpu_khz/1000,cpu_khz%1000);
 			}
 		}
