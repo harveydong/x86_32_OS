@@ -2,6 +2,8 @@
 #include <asm/processor.h>
 #include <linux/sched.h>
 
+int x86_udelay_tsc = 0;
+
 static void __loop_delay(unsigned long loops)
 {
 	int d0;

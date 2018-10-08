@@ -7,7 +7,8 @@
 #define IRQ_INPROGRESS 1
 #define IRQ_DISABLED 2
 #define IRQ_PENDING 4
-
+#define IRQ_AUTODETECT 16
+#define IRQ_WAITING 32
 
 struct hw_interrupt_type{
 

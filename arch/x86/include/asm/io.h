@@ -16,12 +16,10 @@ static inline void writew(unsigned short val,volatile void *addr)
 	asm volatile("movw %0,%1"::"r"(val),"m"(*(volatile unsigned short *)addr):"memory");
 }
 
-#if 0
 static inline void outb(unsigned char value,unsigned short port)
 {
 	__asm__ __volatile__("outb %b0,%w1"::"a"(value),"Nd"(port));
 }
-#endif
 
 static inline unsigned char inb(unsigned short port)
 {

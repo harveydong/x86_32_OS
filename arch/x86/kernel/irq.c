@@ -12,7 +12,7 @@
 #include <linux/sched.h>
 #include <linux/linkage.h>
 #include <linux/printk.h>
-
+#include <asm/errno.h>
 
 volatile unsigned long irq_err_count;
 
@@ -74,6 +74,33 @@ int setup_irq(unsigned int irq,struct irqaction *new)
 	}
 
 	spin_lock_irqsave(&desc->lock,flags);
+
+	p = &desc->action;
+	if((old = *p) != NULL){
+		if(!(old->flags & new->flags & SA_SHIRQ)){
+			spin_unlock_irqrestore(&desc->lock,flags);
+			return -EBUSY;
+		}
+		
+		do{
+			p = &old->next;
+			old = *p;
+		}while(old);
+		
+		shared = 1;
+	}
+
+
+	*p = new;
+
+	if(!shared){
+		desc->depth = 0;
+		desc->status &= ~(IRQ_DISABLED|IRQ_AUTODETECT|IRQ_WAITING);
+		desc->handler->startup(irq);
+	}
+
+	spin_unlock_irqrestore(&desc->lock,flags);
+	return 0;
 }
 
 

@@ -53,7 +53,7 @@
  */
 #define E820_RESERVED_KERN        128
 
-#ifndef __ASSEMBLY__
+//#ifndef __ASSEMBLY__
 #include <linux/types.h>
 struct e820entry {
 	u64 addr;	/* start of memory segment */
@@ -145,7 +145,7 @@ static inline bool is_ISA_range(u64 s, u64 e)
 }
 
 #endif /* __KERNEL__ */
-#endif /* __ASSEMBLY__ */
+//#endif /* __ASSEMBLY__ */
 
 #ifdef __KERNEL__
 //#include <linux/ioport.h>

@@ -16,7 +16,7 @@
 #include <asm/mmu.h>
 #include <asm/ptrace.h>
 #include <linux/time.h>
-
+#include <linux/init.h>
 
 
 
