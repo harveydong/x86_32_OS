@@ -17,8 +17,7 @@
 #include <asm/ptrace.h>
 #include <linux/time.h>
 #include <linux/init.h>
-
-
+#include <asm/ptrace.h>
 
 
 #define SCHED_OTHER 0
@@ -157,8 +156,9 @@ extern void sched_init(void);
 extern void __init time_init(void);
 extern void update_process_times(int user);
 
+extern unsigned long volatile jiffies;
 
-
+extern void do_timer(struct pt_regs *);
 #endif
 
 

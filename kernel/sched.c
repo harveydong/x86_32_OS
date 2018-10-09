@@ -11,6 +11,7 @@
 
 extern void init_timervecs(void);
 extern void timer_bh(void);
+extern void tqueue_bh(void);
 
 
 void __init sched_init(void)
@@ -26,6 +27,8 @@ void __init sched_init(void)
 	init_timervecs();
 
 	init_bh(TIMER_BH,timer_bh);
+	init_bh(TQUEUE_BH,tqueue_bh);
+
 	atomic_inc(&init_mm.mm_count);
 
 	enter_lazy_tlb(&init_mm,current,cpu);	

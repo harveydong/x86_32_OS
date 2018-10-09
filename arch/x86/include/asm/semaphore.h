@@ -15,4 +15,17 @@ struct semaphore{
 
 #define __MUTEX_INITIALIZER(name) __SEMAPHORE_INITIALIZER(name,1)
 
+static inline void sema_init(struct semaphore *sem,int val)
+{
+	atomic_set(&sem->count,val);
+	sem->sleepers = 0;
+	init_waitqueue_head(&sem->wait);
+
+}
+
+static inline void init_MUTEX(struct semaphore *sem)
+{
+	sema_init(sem,1);
+
+}
 #endif

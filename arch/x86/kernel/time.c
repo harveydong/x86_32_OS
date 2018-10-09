@@ -10,9 +10,20 @@
 #include <asm/io.h>
 #include <linux/timex.h>
 
+#include <linux/spinlock.h>
 
 unsigned long fast_gettimeoffset_quotient;
 extern int x86_udelay_tsc;
+extern rwlock_t xtime_lock;
+
+static unsigned long last_tsc_low;
+unsigned long cpu_khz;
+static int delay_at_last_interrupt;
+static int use_tsc;
+
+#define TICK_SIZE tick
+spinlock_t i8253_lock = SPIN_LOCK_UNLOCKED;
+extern spinlock_t i8259A_lock;
 
 unsigned long get_cmos_time(void)
 {
@@ -54,9 +65,49 @@ unsigned long get_cmos_time(void)
 	
 }
 
+static long last_rtc_update;
+int timer_ack;
+
+static inline void do_timer_interrupt(int irq,void *dev_id,struct pt_regs *regs)
+{
+	if(timer_ack){
+		spin_lock(&i8259A_lock);
+		outb(0x0c,0x20);
+		inb(0x20);
+		spin_unlock(&i8259A_lock);
+	}
+
+	do_timer(regs);
+	
+	if((time_status & STA_UNSYNC) ==0 && xtime.tv_sec > last_rtc_update + 660 && xtime.tv_usec >= 500000 - ((unsigned)tick)/2 && xtime.tv_usec <= 500000 + ((unsigned) tick)/2) {
+		last_rtc_update = xtime.tv_sec - 600;
+	}
+
+}
+
 static void timer_interrupt(int irq,void *dev_id,struct pt_regs *regs)
 {
+
+	int count;
+	write_lock(&xtime_lock);
 	printk("into timer interrupt\n");
+
+	if(use_tsc){
+		rdtscl(last_tsc_low);
+		spin_lock(&i8253_lock);
+		outb_p(0x00,0x43);
+		
+		count = inb_p(0x40);
+		count |= inb(0x40) << 8;
+		spin_unlock(&i8253_lock);
+		
+		count = ((LATCH - 1) -count) *TICK_SIZE;
+		delay_at_last_interrupt = (count + LATCH/2)/LATCH;
+		
+	}
+
+	do_timer_interrupt(irq,NULL,regs);
+	write_unlock(&xtime_lock);
 }
 
 static struct irqaction irq0 = {
@@ -73,8 +124,6 @@ static struct irqaction irq0 = {
 #define CALIBRATE_TIME (5*1000020/HZ)
 
 
-static unsigned long last_tsc_low;
-static int use_tsc;
 
 
 static unsigned long __init calibrate_tsc(void)
@@ -135,7 +184,6 @@ static void do_normal_gettime(struct timeval *tm)
 
 void (*do_get_fast_time)(struct timeval *) = do_normal_gettime;
 
-static int delay_at_last_interrupt;
 
 
 static inline unsigned long do_fast_gettimeoffset(void)
@@ -157,7 +205,6 @@ static inline unsigned long do_fast_gettimeoffset(void)
 
 #define do_gettimeoffset() do_fast_gettimeoffset()
 
-unsigned long cpu_khz;
 
 
 

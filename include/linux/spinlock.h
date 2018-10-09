@@ -29,5 +29,7 @@ static inline void write_lock(rwlock_t *rw)
 #define write_unlock(rw) asm volatile("lock;addl $"RW_LOCK_BIAS_STR ",%0":"=m"((rw)->lock)::"memory")
 
 
+#define write_lock_irq(lock) do{ local_irq_disable(); write_lock(lock);}while(0)
+#define write_unlock_irq(lock) do{write_unlock(lock);local_irq_enable();}while(0)
 
 #endif

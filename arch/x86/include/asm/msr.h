@@ -5,4 +5,8 @@
 
 #define rdtsc(low,high) \
 	__asm__ volatile("rdtsc":"=a"(low),"=d"(high))
+
+#define rdtscl(low) \
+	__asm__ volatile("rdtsc":"=a"(low)::"edx")
+
 #endif
