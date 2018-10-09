@@ -3,6 +3,7 @@
 #include <asm/rwlock.h>
 #include <asm/spinlock.h>
 #include <asm/system.h>
+#include <asm/bitops.h>
 
 #define SPINLOCK_MAGIC_INIT
 #define SPIN_LOCK_UNLOCKED (spinlock_t){1 SPINLOCK_MAGIC_INIT}
@@ -10,6 +11,7 @@
 #define spin_lock_irqsave(lock,flags) do{local_irq_save(flags);spin_lock(lock);}while(0)
 #define spin_unlock_irqrestore(lock,flags) do{spin_unlock(lock); local_irq_restore(flags);}while(0)
 
+#define spin_trylock(lock) (!test_and_set_bit(0,(lock)))
 
 typedef struct {
 	volatile unsigned int lock;

@@ -1,5 +1,5 @@
-#ifndef __TYPES_H_
-#define __TYPES_H_
+#ifndef __LINUX_TYPES_H_
+#define __LINUX_TYPES_H_
 #include <linux/posix_types.h>
 
 typedef __kernel_size_t size_t;
@@ -18,8 +18,8 @@ typedef long long __s64;
 
 typedef unsigned char u8;
 typedef unsigned short u16;
-typedef unsigned long u32;
-typedef unsigned long long u64;
+typedef unsigned int u32;
+typedef unsigned long long  u64;
 
 
 
@@ -37,6 +37,12 @@ typedef long long int64;
 
 typedef unsigned int addr_t;
 typedef unsigned int size_t;
+
+typedef long __kernel_time_t;
+typedef long __kernel_suseconds_t;
+
+typedef __kernel_time_t time_t;
+typedef __kernel_suseconds_t suseconds_t;
 
 #define bool int
 #define NULL ((void*)0)

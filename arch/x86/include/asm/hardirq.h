@@ -42,4 +42,13 @@ static inline void release_irqlock(int cpu)
 		clear_bit(0,&global_irq_lock);
 	}
 }
+
+
+static inline int hardirq_trylock(int cpu)
+{
+	return !local_irq_count(cpu) && !test_bit(0,&global_irq_lock);
+}
+
+#define hardirq_endlock(cpu)	do { } while (0)
+
 #endif

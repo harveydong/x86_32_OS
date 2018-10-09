@@ -1,5 +1,5 @@
-#ifndef __TYPES_H_
-#define __TYPES_H_
+#ifndef __LINUX_TYPES_H_
+#define __LINUX_TYPES_H_
 #include <linux/posix_types.h>
 
 typedef __kernel_size_t size_t;

@@ -6,6 +6,8 @@
 
 
 extern void setup_arch(char **);
+extern void softirq_init(void);
+extern void init_IRQ(void);
 
 asmlinkage void __init start_kernel(void)
 {
@@ -27,6 +29,7 @@ asmlinkage void __init start_kernel(void)
 	sched_init();
 	time_init();
 
+	softirq_init();
 	printk("setup arch done!!!!\n");
 
 	

@@ -2,12 +2,12 @@
 #define __LINUX_TIME_H_
 #include <linux/types.h>
 #include <asm/ptrace.h>
-struct timeval{
 
+struct timeval{
 	time_t tv_sec;
-	suseconds_t tv_usec;
-	
+	suseconds_t tv_usec;	
 };
+
 
 
 

@@ -7,6 +7,7 @@ typedef struct{
 
 #define ATOMIC_INIT(i) {(i)}
 #define atomic_set(v,i) (((v)->counter)=(i))
+#define atomic_read(v) ((v)->counter)
 
 
 #define LOCK "lock;"

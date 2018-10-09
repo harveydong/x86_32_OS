@@ -5,6 +5,11 @@
 #define ADDR (*(volatile long*)addr)
 
 
+#define barrier() __asm__ __volatile__("": : :"memory")
+
+#define smp_mb_before_clear_bit()	barrier()
+#define smp_mb_after_clear_bit()	barrier()
+
 static inline void clear_bit(int nr,volatile void *addr)
 {
 	__asm__ volatile(LOCK_PREFIX

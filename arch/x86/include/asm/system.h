@@ -31,6 +31,9 @@ static void inline __set_64bit_var(unsigned long *ptr,unsigned long value)
 
 #define __sti() __asm__ __volatile__("sti":::"memory")
 #define __cli() __asm__ __volatile__("cli":::"memory")
+#define local_irq_disable()	__cli()
+#define local_irq_enable()	__sti()
+
 
 #define read_cr0() ({\
 	unsigned int __dummy;\

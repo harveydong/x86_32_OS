@@ -1,7 +1,7 @@
 #ifndef __BOOT_H__
 #define __BOOT_H__
 #include <asm/screen_info.h>
-#include <linux/types.h>
+#include <asm/types.h>
 #include <asm/e820.h>
 
 #define STACK_SIZE 512
