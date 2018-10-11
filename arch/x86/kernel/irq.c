@@ -13,6 +13,7 @@
 #include <linux/linkage.h>
 #include <linux/printk.h>
 #include <asm/errno.h>
+#include <linux/kernel_stat.h>
 
 volatile unsigned long irq_err_count;
 
@@ -93,6 +94,7 @@ int setup_irq(unsigned int irq,struct irqaction *new)
 
 	*p = new;
 
+	printk("irq is %d,and shared:%d\n",irq,shared);
 	if(!shared){
 		desc->depth = 0;
 		desc->status &= ~(IRQ_DISABLED|IRQ_AUTODETECT|IRQ_WAITING);
@@ -183,11 +185,81 @@ void __global_sti(void)
 	__sti();
 }
 
+static int handle_IRQ_event(unsigned int irq,struct pt_regs *regs,struct irqaction *action)
+{
+	int status;
+	int cpu = smp_processor_id();
+
+	irq_enter(cpu,irq);
+	status = 1;
+
+	if(!(action->flags & SA_INTERRUPT))
+		__sti();
+
+	do{
+		status |= action->flags;
+		action->handler(irq,action->dev_id,regs);
+		action = action->next;
+	}while(action);
+
+	__cli();
+
+	irq_exit(cpu,irq);
+
+	return status;
+}
 
 asmlinkage unsigned int do_IRQ(struct pt_regs regs)
 {
 
-	printk("into do IRQ \n");
+	int irq = regs.orig_eax & 0xff;
+
+	int cpu = smp_processor_id();
+	irq_desc_t *desc = irq_desc + irq;
+
+	struct irqaction *action;
+
+	unsigned int status;
+	kstat.irqs[cpu][irq]++;
+
+	spin_lock(&desc->lock);
+	desc->handler->ack(irq);
+
+	status = desc->status & ~(IRQ_REPLAY|IRQ_WAITING);
+	status |= IRQ_PENDING;
+	
+	action = NULL;
+	if(!(status & (IRQ_DISABLED | IRQ_INPROGRESS))){
+		action = desc->action;
+		status &= ~IRQ_PENDING;
+		status |= IRQ_INPROGRESS;
+	}
+
+	desc->status = status;
+	
+	if(!action)
+		goto out;
+		
+	for(;;){
+		spin_unlock(&desc->lock);
+		handle_IRQ_event(irq,&regs,action);
+		spin_lock(&desc->lock);
+		
+		if(!(desc->status & IRQ_PENDING))
+			break;
+
+		desc->status &= ~IRQ_PENDING;
+	}
+
+	desc->status &= ~IRQ_INPROGRESS;
+
+
+out:
+	desc->handler->end(irq);
+	spin_unlock(&desc->lock);
+		
+	printk("into do IRQ so here,and irq is 0x%x\n\n",irq);
+
 	return 0;
 
 }

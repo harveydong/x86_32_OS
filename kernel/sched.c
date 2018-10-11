@@ -8,10 +8,13 @@
 #include <asm/mmu_context.h>
 #include <asm/processor.h>
 #include <linux/printk.h>
+#include <linux/kernel_stat.h>
 
 extern void init_timervecs(void);
 extern void timer_bh(void);
 extern void tqueue_bh(void);
+
+struct kernel_stat kstat;
 
 
 void __init sched_init(void)

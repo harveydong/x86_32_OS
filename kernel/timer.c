@@ -127,7 +127,7 @@ void update_process_times(int user_tick)
 void do_timer(struct pt_regs *regs)
 {
 	(*(unsigned long *)&jiffies)++;
-	
+	printk("do timer and jiffies is 0x%x\n",jiffies);	
 	mark_bh(TIMER_BH);
 	if(TQ_ACTIVE(tq_timer))
 		mark_bh(TQUEUE_BH);

@@ -5,6 +5,7 @@
 #include <asm/system.h>
 #include <linux/slab.h>
 #include <asm/delay.h>
+#include <asm/io.h>
 
 extern void setup_arch(char **);
 extern void softirq_init(void);
@@ -20,7 +21,8 @@ static void __init calibrate_delay(void)
 	
 	loops_per_jiffy = (1 << 12);
 	printk("Calibrating delay loop ... ");
-	
+
+	printk("read 8259 IMR:0x%x\n",inb(0x21));	
 	while(loops_per_jiffy <= 1){
 		ticks = jiffies;
 		while(ticks == jiffies)
@@ -51,6 +53,7 @@ static void __init calibrate_delay(void)
 	printk("%1u.%021u BogoMIPS\n",loops_per_jiffy/(500000/HZ),(loops_per_jiffy/(5000/HZ)%100));
 }
 
+
 asmlinkage void __init start_kernel(void)
 {
 	char *command_line;
@@ -79,6 +82,7 @@ asmlinkage void __init start_kernel(void)
 	calibrate_delay();
 	printk("setup arch done!!!!\n");
 
+	cli();
 	
 	while(1);
 }

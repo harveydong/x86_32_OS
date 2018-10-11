@@ -173,6 +173,12 @@ static void enable_8259A_irq(unsigned int irq)
 	spin_lock_irqsave(&i8259A_lock,flags);
 	
 	cached_irq_mask &= mask;
+	if(irq & 8)
+		outb(cached_A1,0xA1);
+	else
+		outb(cached_21,0x21);
+
+	spin_unlock_irqrestore(&i8259A_lock,flags);
 	
 }
 
@@ -269,8 +275,9 @@ void __init init_IRQ(void)
 	
 	for(i = 0; i < NR_IRQS;i++){
 		int vector = FIRST_EXTERNAL_VECTOR + i;
-		if(vector != SYSCALL_VECTOR)
+		if(vector != SYSCALL_VECTOR){
 			set_intr_gate(vector,interrupt[i]);
+		}	
 	}
 
 	set_intr_gate(FIRST_DEVICE_VECTOR,interrupt[0]);
@@ -283,6 +290,7 @@ void __init init_IRQ(void)
 	set_intr_gate(SPURIOUS_APIC_VECTOR,spurious_interrupt);
 	set_intr_gate(ERROR_APIC_VECTOR,error_interrupt);
 
+	__asm__ __volatile__("lidt %0":"=m"(idt_descr));
 
 /*for 8253 pit 
 * control port=0x43
@@ -292,7 +300,7 @@ void __init init_IRQ(void)
 */	
 
 /*set freq*/
-	outb_p(0x36,0x43);//set 100Hz
+	outb_p(0x34,0x43);//set 100Hz
 
 /*set counter*/
 	outb_p(LATCH&0xff,0x40);
@@ -300,6 +308,7 @@ void __init init_IRQ(void)
 	
 //	setup_irq(2,&irq2);
 	
+
 	
 
 }

@@ -10,6 +10,8 @@
 #define IRQ_AUTODETECT 16
 #define IRQ_WAITING 32
 
+#define IRQ_REPLAY 8
+
 struct hw_interrupt_type{
 
 	const char *name;
