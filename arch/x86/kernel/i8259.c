@@ -212,22 +212,22 @@ void __init init_8259A(int auto_eoi)
 	unsigned long flags;
 	spin_lock_irqsave(&i8259A_lock,flags);
 
-	outb(0xff,0x21);
-	outb(0xff,0xA1);
+	outb(0xff,0x21); //for OCW1 IMR.
+	outb(0xff,0xA1);//for OCW1 IMR.
 	
-	outb_p(0x11,0x20);
-	outb_p(0x20+0,0x21);
-	outb_p(0x04,0x21);
+	outb_p(0x11,0x20);//ICW1
+	outb_p(0x20+0,0x21);//ICW2
+	outb_p(0x04,0x21);//ICW3
 	
 	if(auto_eoi)
-		outb_p(0x03,0x21);
+		outb_p(0x03,0x21);//ICW4
 	else
 		outb_p(0x01,0x21);
 
-	outb_p(0x11,0xA0);
-	outb_p(0x20+8,0xA1);
-	outb_p(0x02,0xA1);
-	outb_p(0x01,0xA1);
+	outb_p(0x11,0xA0);//SLAVE ICW1
+	outb_p(0x20+8,0xA1);//SLAVE ICW2
+	outb_p(0x02,0xA1);//SLAVE ICW3
+	outb_p(0x01,0xA1);//SLAVE ICW4
 	
 	if(auto_eoi)
 		i8259A_irq_type.ack = disable_8259A_irq;
@@ -235,8 +235,8 @@ void __init init_8259A(int auto_eoi)
 		i8259A_irq_type.ack = mask_and_ack_8259A;
 	
 	udelay(100);
-	outb(cached_21,0x21);
-	outb(cached_A1,0xA1);
+	outb(cached_21,0x21);//MASTER OCW1,IMR=0XFF
+	outb(cached_A1,0xA1);//slave OCW1,IMR=0XFF
 	
 	spin_unlock_irqrestore(&i8259A_lock,flags);
 }
@@ -282,8 +282,19 @@ void __init init_IRQ(void)
 	set_intr_gate(LOCAL_TIMER_VECTOR,apic_timer_interrupt);
 	set_intr_gate(SPURIOUS_APIC_VECTOR,spurious_interrupt);
 	set_intr_gate(ERROR_APIC_VECTOR,error_interrupt);
-	
-	outb_p(0x34,0x43);
+
+
+/*for 8253 pit 
+* control port=0x43
+* counter0 port = 0x40
+* counter1 port = 0x41
+* counter2 port = 0x42
+*/	
+
+/*set freq*/
+	outb_p(0x36,0x43);//set 100Hz
+
+/*set counter*/
 	outb_p(LATCH&0xff,0x40);
 	outb(LATCH>>8,0x40);
 	
