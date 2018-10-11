@@ -300,7 +300,7 @@ void __init init_IRQ(void)
 */	
 
 /*set freq*/
-	outb_p(0x34,0x43);//set 100Hz
+	outb_p(0x36,0x43);//set 100Hz
 
 /*set counter*/
 	outb_p(LATCH&0xff,0x40);
