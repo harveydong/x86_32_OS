@@ -12,6 +12,7 @@ typedef struct { unsigned int pgprot;} pgprot_t;
 
 
 
+
 #define pmd_val(x) ((x).pmd)
 
 #define __pgd(x) ((pgd_t) {(x)})
@@ -38,5 +39,6 @@ typedef struct { unsigned int pgprot;} pgprot_t;
 
 #define __pa(x) ((unsigned long)(x) - PAGE_OFFSET)
 #define __va(x) ((void *)(unsigned long)(x) + PAGE_OFFSET)
+
 
 #endif

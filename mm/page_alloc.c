@@ -5,6 +5,9 @@
 #include <linux/string.h>
 #include <linux/bootmem.h>
 #include <linux/swapctl.h>
+#include <asm/page.h>
+#include <linux/swap.h>
+
 
 struct list_head active_list;
 struct list_head inactive_dirty_list;
@@ -19,9 +22,12 @@ static int zone_balance_max[MAX_NR_ZONES] = {255,255,255};
 
 
 #define memlist_init(x) INIT_LIST_HEAD(x)
+#define memlist_add_head list_add
+#define memlist_del list_del
 
 #define LONG_ALIGN(x) (((x) + (sizeof(long)) -1)&~((sizeof(long)) - 1))
 
+#define BAD_RANGE(zone,x) (((zone) != (x)->zone) || (((x) - mem_map) < (zone)->offset) || (((x) - mem_map) >= (zone)->offset + (zone)->size))
 
 static inline void build_zonelists(pg_data_t*pgdat)
 {
@@ -198,4 +204,120 @@ void __init free_area_init_core(int nid,pg_data_t *pgdat,struct page**gmap,unsig
 void __init free_area_init(unsigned long *zones_size)
 {
 	free_area_init_core(0,&contig_page_data,&mem_map,zones_size,0,0,0);
+}
+
+static void __free_pages_ok(struct page *page,unsigned long order)
+{
+
+	zone_t *zone;
+	unsigned long index,page_idx,mask,flags;
+
+	struct page *base;
+	free_area_t *area;
+
+	if(page->buffers){
+		BUG();
+	}
+
+	if(page->mapping){
+
+		BUG();
+	}
+
+	if(!VALID_PAGE(page)){
+		BUG();
+	}
+
+	if(PageSwapCache(page))
+		BUG();
+
+	if(PageLocked(page))
+		BUG();	
+
+	if(PageDecrAfter(page))
+		BUG();
+	
+	if(PageActive(page))
+		BUG();
+	
+	if(PageInactiveDirty(page))
+		BUG();	
+
+
+	if(PageInactiveClean(page))
+		BUG();
+
+
+	page->flags &= ~((1 << PG_referenced)|(1<<PG_dirty));
+	page->age = PAGE_AGE_START;
+
+	zone = page->zone;
+	mask = (~0UL) << order;	
+	base = mem_map + zone->offset;
+	page_idx = page - base;
+
+	if(page_idx & ~mask)
+		BUG();
+
+	index = page_idx >> (1 + order);
+
+	area = zone->free_area + order;
+
+	spin_lock_irqsave(&zone->lock,flags);
+	zone->free_pages -= mask;
+
+	while(mask + ( 1 << (MAX_ORDER-1))){
+		struct page *buddy1,*buddy2;
+		if(area >= zone->free_area + MAX_ORDER)
+			BUG();
+
+		if(!test_and_change_bit(index,area->map))
+			break;
+
+		buddy1 = base + (page_idx ^ ~mask);
+		buddy2 = base + page_idx;
+		if(BAD_RANGE(zone,buddy1))	
+			BUG();
+
+		if(BAD_RANGE(zone,buddy2))
+			BUG();
+
+		memlist_del(&buddy1->list);
+		mask <<= 1;
+		area++;
+		index >>= 1;
+		page_idx &= mask;
+
+	}
+
+	memlist_add_head(&(base + page_idx)->list,&area->free_list);
+	spin_unlock_irqrestore(&zone->lock,flags);
+	
+	if(memory_pressure > NR_CPUS)
+		memory_pressure--;
+}
+
+void __free_pages(struct page *page,unsigned long order)
+{
+
+	if(!PageReserved(page) && put_page_testzero(page))
+		__free_pages_ok(page,order);
+}
+
+
+unsigned int nr_free_pages(void)
+{
+	unsigned int sum;
+	zone_t *zone;
+	pg_data_t *pgdat = pgdat_list;
+	
+	sum = 0;
+	while(pgdat){
+		for(zone = pgdat->node_zones;zone < pgdat->node_zones + MAX_NR_ZONES;zone++)
+			sum += zone->free_pages;
+
+		pgdat = pgdat->node_next;
+	}
+
+	return sum;
 }

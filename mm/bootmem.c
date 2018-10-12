@@ -5,6 +5,7 @@
 #include <linux/string.h>
 #include <asm/bitops.h>
 #include <linux/bootmem.h>
+#include <linux/mm.h>
 
 unsigned long max_low_pfn;
 unsigned long min_low_pfn;
@@ -206,7 +207,53 @@ void *__init __alloc_bootmem_node(pg_data_t*pgdat,unsigned long size,unsigned lo
 	return NULL;
 
 }
+
+
+static unsigned long __init free_all_bootmem_core(pg_data_t *pgdat)
+{
+	struct page *page = pgdat->node_mem_map;
+	bootmem_data_t * bdata = pgdat->bdata;
+	unsigned long i,count,total = 0;
+	unsigned long idx;
+	
+	if(!bdata->node_bootmem_map){
+		printk("free all bootmem error\n");
+		while(1);
+	}
+
+	count = 0;
+
+	idx = bdata->node_low_pfn - (bdata->node_boot_start >> PAGE_SHIFT);
+	
+	for(i = 0; i < idx; i++,page++){
+		if(!test_bit(i,bdata->node_bootmem_map)){
+			count++;
+			ClearPageReserved(page);
+			set_page_count(page,1);
+			__free_page(page);
+		}
+	}
+
+	total += count;
+	page = virt_to_page(bdata->node_bootmem_map);
+	count = 0;
+
+	for(i = 0; i < ((bdata->node_low_pfn - (bdata->node_boot_start >> PAGE_SHIFT))/8 + PAGE_SIZE - 1)/PAGE_SIZE; i++,page++){
+		count++;
+		ClearPageReserved(page);
+		set_page_count(page,1);	
+		__free_page(page);
+	}
+
+	total += count;
+	bdata->node_bootmem_map = NULL;
+		
+	return total;
+
+}
 unsigned long __init free_all_bootmem(void)
 {
+
+	return (free_all_bootmem_core(&contig_page_data));
 	return 0;
 }

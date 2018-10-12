@@ -6,6 +6,7 @@
 #include <linux/slab.h>
 #include <asm/delay.h>
 #include <asm/io.h>
+#include <linux/mm.h>
 
 extern void setup_arch(char **);
 extern void softirq_init(void);
@@ -80,9 +81,12 @@ asmlinkage void __init start_kernel(void)
 	kmem_cache_init();
 	sti();
 	calibrate_delay();
-	printk("setup arch done!!!!\n");
 
 	cli();
+
+	mem_init();
+	printk("setup arch done!!!!\n");
+
 	
 	while(1);
 }

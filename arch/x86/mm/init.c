@@ -9,13 +9,92 @@
 #include <asm/fixmap.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
+#include <linux/printk.h>
+#include <linux/highmem.h>
+#include <asm/e820.h>
+#include <linux/swap.h>
+
+extern char _text,_etext,_edata,__bss_start,_end,__init_begin,__init_end;
+
+
 
 unsigned long highstart_pfn,highend_pfn;
+static unsigned long totalram_pages;
+static unsigned long totalhigh_pages;
 
+static inline int page_is_ram(unsigned long pagenr)
+{
+	int i;
+	
+	for(i = 0; i < e820.nr_map;i++){
+		unsigned long addr,end;
+		
+		if(e820.map[i].type != E820_RAM)
+			continue;
+
+		addr = (e820.map[i].addr + PAGE_SIZE - 1) >> PAGE_SHIFT;
+		end = (e820.map[i].addr + e820.map[i].size) >> PAGE_SHIFT;
+		if((pagenr >= addr) && (pagenr < end))
+			return 1;
+	
+	}
+
+	return 0;
+
+}
 
 void __init mem_init(void)
 {
+	int reservedpages;
 
+	int tmp,codesize,datasize,initsize;
+	if(!mem_map){
+		printk("error mem init !!!!\n");
+		while(1);
+	}
+
+
+	highmem_start_page = mem_map + highstart_pfn;
+	max_mapnr = num_physpages = highend_pfn;
+
+	high_memory  = (void*)__va(max_low_pfn*PAGE_SIZE);
+
+	memset(empty_zero_page,0,PAGE_SIZE);
+	
+	totalram_pages += free_all_bootmem();	
+
+	reservedpages = 0;
+		
+	for(tmp = 0; tmp < max_low_pfn; tmp++)
+		if(page_is_ram(tmp) && PageReserved(mem_map + tmp))
+			reservedpages++;
+
+
+	for(tmp = highstart_pfn; tmp < highend_pfn; tmp++){
+		struct page *page = mem_map + tmp;
+		
+		if(!page_is_ram(tmp)){
+			SetPageReserved(page);//不是ram的地址空间的page，被设置为reserved.
+			continue;
+		}
+		
+		ClearPageReserved(page);
+		set_bit(PG_highmem,&page->flags);
+		atomic_set(&page->count,1);
+		__free_page(page);
+		totalhigh_pages++;
+	}	
+
+	totalram_pages += totalhigh_pages;
+
+	codesize = (unsigned long)&_etext - (unsigned long)&_text;
+	datasize = (unsigned long)&_edata - (unsigned long)&_etext;
+	initsize = (unsigned long)&__init_end - (unsigned long)&__init_begin;
+
+	printk("Memory:%luk/%luk available (%dk kernel code,%dk reserved,%dk data,%dk init,%ldk highmem)\n",(unsigned long )nr_free_pages() << (PAGE_SHIFT -10),max_mapnr << (PAGE_SHIFT - 10),codesize >> 10,reservedpages << (PAGE_SHIFT-10),datasize >> 10,initsize >> 10,(unsigned long)(totalhigh_pages << (PAGE_SHIFT - 10)));
+
+	
+	printk("Mem init done!\n");
 }
 
 static inline void set_pte_phys(unsigned long vaddr,unsigned long phys,pgprot_t flags)
